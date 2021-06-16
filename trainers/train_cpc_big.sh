@@ -9,7 +9,10 @@
 
 
 PATH_DB=$1
-PATH_CPT=deduce from path db
+SHARE=$(basename $(dirname $MODEL_PATH))
+SIZE=$(basename $(dirname $(dirname $MODEL_PATH)))
+LANGUAGE=$(basename $(dirname $(dirname $(dirname $MODEL_PATH))))
+PATH_CPT=${ALL_CCFRSCRATCH}/${LANGUAGE}/${SIZE}/${SHARE}
 NB_EPOCHS=deduce from path db
 
 if [ -f ${PATH_CPT}/running.state ]; then

@@ -19,7 +19,8 @@ for (( POWER=6 ; POWER >= 0 ; POWER-- )); do                                # lo
   for (( SHARE=0 ; SHARE < $((2**POWER)) ; SHARE++ )); do                   # loop through number of shares
     for LANGUAGE in ${LANGUAGES[*]}; do
       MODEL_PATH=${ALL_CCFRSCRATCH}/experiments/${LANGUAGE}/${SIZE}h/share${SHARE}
-      ./which_model.sh $MODEL_PATH
+      PATH_DB=${ALL_CCFRSCRATCH}/families/${LANGUAGE}/${SIZE}h/share${SHARE}
+      ./which_model.sh $MODEL_PATH $PATH_DB
     done;
   done;
 done;
