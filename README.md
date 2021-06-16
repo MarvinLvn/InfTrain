@@ -1,6 +1,6 @@
 # Installation
 
-Please follow instructions at `https://github.com/bootphon/zerospeech2021_baseline
+Please follow instructions at https://github.com/bootphon/zerospeech2021_baseline
 In the following, we'll assume that experiments will be performed on the [Jean Zay cluster](http://www.idris.fr/annonces/annonce-jean-zay-eng.html). 
 
 # Structure
