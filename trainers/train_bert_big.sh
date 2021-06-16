@@ -20,7 +20,14 @@ UPDATE_FREQ=$((128 / TOTAL_GPU))
 
 TRAIN_BIN_PATH=$1
 OUTPUT=deduce from train bin path if possible
+NB_EPOCHS=deduce from path db
 
+if [ -f ${PATH_CPT}/running.state ]; then
+  echo "${PATH_CPT}/running.state found. Not running anything."
+  exit
+fi;
+
+touch ${PATH_CPT}/running.state
 python fairseq/train.py --fp16 ${TRAIN_BIN_PATH} \
       --save-dir ${OUTPUT} \
       --keep-last-epochs 1 \
@@ -37,3 +44,9 @@ python fairseq/train.py --fp16 ${TRAIN_BIN_PATH} \
       --max-tokens $MAX_TOKENS --max-update 250000 \
       --seed 5 --log-format simple --log-interval 10 --skip-invalid-size-inputs-valid-test \
       --distributed-world-size $TOTAL_GPU --distributed-port $DISTRIBUTED_PORT
+
+
+rm ${PATH_CPT}/running.state
+if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then
+  touch ${PATH_CPT}/done.state
+fi;

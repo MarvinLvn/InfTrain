@@ -10,7 +10,19 @@
 
 PATH_DB=$1
 PATH_CPT=deduce from path db
+NB_EPOCHS=deduce from path db
 
+if [ -f ${PATH_CPT}/running.state ]; then
+  echo "${PATH_CPT}/running.state found. Not running anything."
+  exit
+fi;
+
+touch ${PATH_CPT}/running.state
 python CPC_audio/cpc/train.py --pathCheckpoint ${PATH_CPT} \
                            --pathDB ${PATH_DB} --max_size_loaded 400000000 \
                            --file_extension .wav --nLevelsGRU 4 --hiddenEncoder 512 --hiddenGar 512 --save_step 1
+
+rm ${PATH_CPT}/running.state
+if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then
+  touch ${PATH_CPT}/done.state
+fi;

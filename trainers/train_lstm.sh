@@ -9,7 +9,14 @@
 
 TRAIN_BIN_PATH=$1
 OUTPUT=deduce from train bin path if possible
+NB_EPOCHS=deduce from path db
 
+if [ -f ${PATH_CPT}/running.state ]; then
+  echo "${PATH_CPT}/running.state found. Not running anything."
+  exit
+fi;
+
+touch ${PATH_CPT}/running.state
 python fairseq/train.py --fp16 ${TRAIN_BIN_PATH} \
       --task language_modeling \
       --save-dir ${OUTPUT} \
@@ -23,3 +30,8 @@ python fairseq/train.py --fp16 ${TRAIN_BIN_PATH} \
       --dropout 0.1 --weight-decay 0.01 \
       --sample-break-mode none --tokens-per-sample 2048 \
       --max-tokens 163840 --update-freq 1 --max-update 100000
+
+rm ${PATH_CPT}/running.state
+if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then
+  touch ${PATH_CPT}/done.state
+fi;
