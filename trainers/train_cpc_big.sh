@@ -2,7 +2,7 @@
 #SBATCH --account=cfs@gpu
 #SBATCH --partition=gpu_p2            # access to octo-gpus machines
 #SBATCH --nodes=4                     # nombre de noeud
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=24
 #SBATCH --mem-per-cpu=12G
 #SBATCH --gres=gpu:8                  # nombre de GPUs par nœud
@@ -58,8 +58,8 @@ mkdir -p $PATH_CPT
 touch ${PATH_CPT}/running.state
 echo "Start training $PATH_CPT"
 module load sox
-python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
-                           --pathDB ${PATH_DB} --max_size_loaded 200000000 \
+srun python -u /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
+                           --pathDB ${PATH_DB} --restart --max_size_loaded 200000000 \
                            --file_extension .wav --nLevelsGRU 4 --hiddenEncoder 512 --hiddenGar 512 --save_step 1 \
                            --multihead_rnn --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
                            --batchSizeGPU 16 --rnnMode transformer --distributed --master_port $MASTER_PORT

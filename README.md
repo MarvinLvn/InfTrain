@@ -56,6 +56,18 @@ Please refer to [this git repo](https://github.com/bootphon/zerospeech2021_basel
 
 To evaluate models, you must install the [ZeroSpeech 2021 repo](https://github.com/bootphon/zerospeech2021)
 
+# How to connect to the account ?
+
+From flores :
+
+```angular2html
+ssh uow84uh@jean-zay.idris.fr
+
+# Load right project (to have access to inftrain conda env)
+cd utils 
+source cfs_proj.sh
+```
+
 # Running experiments
 
 All experiments will be run on Marvin's Jean Zay account. This git repo can be found under `/gpfsscratch/rech/cfs/uow84uh/InfTrain` with pre-installed dependencies.
