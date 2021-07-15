@@ -108,3 +108,20 @@ CPC big :
 ```bash
 sbatch -o my_log_cpc_big.txt trainers/train_cpc_big.sh /gpfsscratch/rech/cfs/commun/families/EN/3200h/00
 ```
+
+# How it works ?
+
+Each time a model is trained, let's say in `EN/50h/00/cpc_small`, a file `running.state` is created.
+If the model reaches its planned number of epochs, this file will be replaced by `done.state`.
+The `generate_study.sh` script will look for the presence of either one file or the other to decide if a given model needs to be (re-)trained.
+
+However, one should be careful. This system hasn't been thoroughly checked. Not 100% clear to me what happens when there's a memory issue for instance.
+Will the `running.state` file be removed ? If no, we'll have to remove them manually so that `generate_study.sh` knows which models need to be retrained.
+
+# What needs to be done ?
+
+- Check CPC models are running / converging (plot validation loss for different training duration)
+- Create a python script or jupyter notebook that shows the progress of the study : how many CPC models have been fully trained ? K-means ? Languages models ? Etc
+- Prepare submission scripts for all the metrics : ABX, sSIMI, sBLIMP, sWUGGY (see with Nick)
+- Finish submission scripts to train k-means and language models.
+- Create submission scripts to extract discrete-representation
