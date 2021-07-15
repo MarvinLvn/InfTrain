@@ -20,5 +20,5 @@ dependencies:
   - tqdm
   - pip:
       - progressbar2
-      - "git+https://github.com/pytorch/fairseq.git"
+      - "git+https://github.com/MarvinLvn/CPC_torch.git"
       - "git+https://github.com/fairinternal/CPC_torch.git"

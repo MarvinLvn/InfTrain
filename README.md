@@ -43,7 +43,7 @@ The `experiments` folder contain scripts to generate the different experiments (
 
 ```bash
 conda env create -f environment.yml && conda activate inftrain
-git clone https://github.com/tuanh208/CPC_torch.git
+git clone https://github.com/MarvinLvn/CPC_torch.git
 ```
 
 To train models, you must install the following dependencies : 
