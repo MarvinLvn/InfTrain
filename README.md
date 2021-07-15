@@ -128,8 +128,9 @@ However, one should be careful. This system hasn't been thoroughly checked. Not 
 Will the `running.state` file be removed ? If no, we'll have to remove them manually so that `generate_study.sh` knows which models need to be retrained.
 
 # What needs to be done ?
-
+- Submit CPC big models
 - Check CPC models are running / converging (plot validation loss for different training duration)
+- Check generate_study.sh has the right behavior : resubmitting models that need to be resubmitted, not resubmitting models that are done
 - Create a python script or jupyter notebook that shows the progress of the study : how many CPC models have been fully trained ? K-means ? Languages models ? Etc
 - Prepare submission scripts for all the metrics : ABX, sSIMI, sBLIMP, sWUGGY (see with Nick)
 - Finish submission scripts to train k-means and language models.
