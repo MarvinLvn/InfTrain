@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=24
 #SBATCH --mem-per-cpu=12G
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
-#SBATCH --time=100:00:00
+#SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --exclusive
 
