@@ -17,6 +17,5 @@
 # Arguments of trainers/train_cpc_big.sh must be lines of experiments_txt/cpc_big_experiments.txt
 
 ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/cpc_big_experiments.txt)
-echo $ARGS
 
 ./gpfsscratch/rech/cfs/uow84uh/InfTrain/trainers/train_cpc_big.sh ${ARGS}

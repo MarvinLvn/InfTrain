@@ -86,10 +86,10 @@ Once you generated experiment files, you can check their content and then run :
 
 ```bash
 # To submit CPC small models
-./submit_cpc_small.sh
+sbatch submit_cpc_small.sh
 
 # To submit CPC big models
-./submit_cpc_big.sh
+sbatch submit_cpc_big.sh
 ```
 
 None of the scripts to train k-means and language models work now. 
