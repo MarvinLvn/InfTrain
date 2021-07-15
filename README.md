@@ -13,24 +13,24 @@ Files should be organized as follows :
 │ 
 └─── 50h
      │ 
-     └─── share0
-               └─── cpc_<small|big>
-                   | kmeans_<K> 
-                   | <lstm|bert_small|bert_large>
-                   | evaluation
-         |share1
+     └─── 00
+            └─── cpc_<small|big>
+                 | kmeans_50 
+                 | <lstm|bert_large>
+                 | evaluation
+         |01
          |...
-         |share63
+         |63
      |100h/
-         |share0
+         |00
          |...
-         |share31
+         |31
      |200h/
      |400h/
      |800h/
      |1600h/
      |3200h/
-         |share1
+         |00
 |French
 │ 
 └─── same structure
