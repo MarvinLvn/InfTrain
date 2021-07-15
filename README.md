@@ -79,3 +79,6 @@ Once you generated experiment files, you can check their content and then run :
 # To submit CPC big models
 ./submit_cpc_big.sh
 ```
+
+None of the scripts to train k-means and language models work now. 
+Those should be finished and thoroughly checked before running anything.
