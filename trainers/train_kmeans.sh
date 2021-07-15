@@ -6,6 +6,9 @@
 #SBATCH --cpus-per-task=10          # nombre de cpus par GPU : rule of thumb n_cpu = 10*n_gpus
 #SBATCH --hint=nomultithread
 
+echo "This script hasn't been tested. Needs to be finished and thoroughly checked"
+exit
+
 PATH_DB=$1
 
 if [ "$#" -ne 2 ]; then

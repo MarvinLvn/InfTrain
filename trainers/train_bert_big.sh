@@ -7,6 +7,9 @@
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --exclusive
 
+echo "This script hasn't been tested. Needs to be finished and thoroughly checked"
+exit
+
 SPAN_SIZE=10
 MAX_TOKENS=8192
 GPU_PER_TASK=8

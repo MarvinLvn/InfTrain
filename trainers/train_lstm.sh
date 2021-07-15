@@ -7,6 +7,9 @@
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --exclusive
 
+echo "This script hasn't been tested. Needs to be finished and thoroughly checked"
+exit
+
 TRAIN_BIN_PATH=$1
 OUTPUT=deduce from train bin path if possible
 NB_EPOCHS=deduce from path db
