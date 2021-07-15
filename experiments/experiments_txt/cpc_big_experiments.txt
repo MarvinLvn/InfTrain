@@ -1,0 +1,14 @@
+/experiments/English/800h/share0/cpc_big
+/experiments/French/800h/share0/cpc_big
+/experiments/English/800h/share1/cpc_big
+/experiments/French/800h/share1/cpc_big
+/experiments/English/800h/share2/cpc_big
+/experiments/French/800h/share2/cpc_big
+/experiments/English/800h/share3/cpc_big
+/experiments/French/800h/share3/cpc_big
+/experiments/English/1600h/share0/cpc_big
+/experiments/French/1600h/share0/cpc_big
+/experiments/English/1600h/share1/cpc_big
+/experiments/French/1600h/share1/cpc_big
+/experiments/English/3200h/share0/cpc_big
+/experiments/French/3200h/share0/cpc_big

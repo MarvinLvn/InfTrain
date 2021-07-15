@@ -2,8 +2,7 @@
 #SBATCH --account=cfs@gpu
 #SBATCH --nodes=2                     # nombre de noeud
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=24
-#SBATCH --mem-per-cpu=12G
+#SBATCH --cpus-per-task=10
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
@@ -52,12 +51,21 @@ if [ -f ${PATH_CPT}/running.state ]; then
 fi;
 
 mkdir -p $PATH_CPT
-touch ${PATH_CPT}/running.state
-echo python CPC_audio/cpc/train.py --pathCheckpoint ${PATH_CPT} \
+echo touch ${PATH_CPT}/running.state
+exit
+echo "Start training $PATH_CPT"
+module load sox
+python -u /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
                            --pathDB ${PATH_DB} \
                            --file_extension .wav --nLevelsGRU 2 --save_step 2 --multihead_rnn --restart \
                            --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
                            --distributed --master_port $MASTER_PORT
+
+#srun sh -c 'python -m torch.distributed.launch /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint '${PATH_CPT}' \
+#--pathDB '${PATH_DB}' \
+#--file_extension .wav --nLevelsGRU 2 --save_step 2 --multihead_rnn --restart \
+#--nEpoch '${NB_EPOCHS}' --random_seed 42 --n_process_loader 1 --save_step 5 \
+#--distributed --master_port '$MASTER_PORT' --local_rank $SLURM_PROCID'
 
 rm ${PATH_CPT}/running.state
 if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then

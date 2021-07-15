@@ -42,6 +42,7 @@ The `experiments` folder contain scripts to generate the different experiments (
 # Installation
 
 ```bash
+module load sox
 conda env create -f environment.yml && conda activate inftrain
 git clone https://github.com/MarvinLvn/CPC_torch.git
 ```
@@ -54,3 +55,23 @@ To train models, you must install the following dependencies :
 Please refer to [this git repo](https://github.com/bootphon/zerospeech2021_baseline) for instructions about how to train the model
 
 To evaluate models, you must install the [ZeroSpeech 2021 repo](https://github.com/bootphon/zerospeech2021)
+
+# Running experiments
+
+All experiments will be run on Marvin's Jean Zay account. This git repo can be found under `/gpfsscratch/rech/cfs/uow84uh/InfTrain` with pre-installed dependencies.
+To run experiments, first type :
+
+```bash
+cd experiments
+./generate_study.sh
+```
+
+This will create experiment files in the `experiment_txt` folder. 
+There's one experiment file for each model, and each line of an experiment file contains the path to the training set.
+The information of which model needs to be trained is automatically deduced from the training set path.
+
+Once you generated experiment files, you can train CPC models by running :
+
+```bash
+
+```

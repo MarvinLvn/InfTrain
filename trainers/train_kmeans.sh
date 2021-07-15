@@ -34,7 +34,9 @@ fi;
 
 mkdir -p $PATH_CPT
 touch ${PATH_CPT}/running.state
-python CPC_audio/cpc/criterion/clustering/clustering_script.py --recursionLevel 2 --extension wav \
+echo "Start training $PATH_CPT"
+module load sox
+python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/criterion/clustering/clustering_script.py --recursionLevel 2 --extension wav \
         --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 200 --level_gru ${LEVEL_GRU} --save --load \
         ${PATH_CPC} ${PATH_OUTPUT_CHECKPOINT}
 
