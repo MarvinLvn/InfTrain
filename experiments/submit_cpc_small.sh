@@ -2,7 +2,7 @@
 #SBATCH --account=cfs@gpu
 #SBATCH --output=logs/cpc_small_%A_%a.out
 #SBATCH --nodes=2                     # nombre de noeud
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=10
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
 #SBATCH --time=20:00:00

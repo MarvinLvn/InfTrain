@@ -3,7 +3,7 @@
 #SBATCH --output=logs/cpc_big_%A_%a.out
 #SBATCH --partition=gpu_p2            # access to octo-gpus machines
 #SBATCH --nodes=4                     # nombre de noeud
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=24
 #SBATCH --mem-per-cpu=12G
 #SBATCH --gres=gpu:8                  # nombre de GPUs par nœud
