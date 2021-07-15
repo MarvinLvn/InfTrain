@@ -17,21 +17,50 @@ export NCCL_DEBUG=INFO # for debugging
 
 # Script parameters
 PATH_DB=$1
-SHARE=$(basename $(dirname $MODEL_PATH))
-SIZE=$(basename $(dirname $(dirname $MODEL_PATH)))
-LANGUAGE=$(basename $(dirname $(dirname $(dirname $MODEL_PATH))))
-PATH_CPT=${ALL_CCFRSCRATCH}/${LANGUAGE}/${SIZE}/${SHARE}
-NB_EPOCHS=deduce from path db
+
+if [ "$#" -ne 1 ]; then
+  echo "Illegal number of parameters. Please respect :"
+  echo "./train_cpc_big.sh /path/to/database/containing/wav/files"
+  echo "Example :"
+  echo "./train_cpc_big.sh /gpfsscratch/rech/cfs/commun/families/EN/50h/00"
+  exit
+fi
+
+SHARE=$(basename $PATH_DB)
+SIZE=$(basename $(dirname $PATH_DB))
+LANGUAGE=$(basename $(dirname $(dirname $PATH_DB)))
+PATH_CPT=${ALL_CCFRSCRATCH}/InfTrain_models/${LANGUAGE}/${SIZE}/${SHARE}/cpc_big
+
+# This can be changed if we observe that models take too much time to train.
+# However, if one decide to lower the number of epochs,
+# one should check that models are indeed converging
+if [ "$SIZE" == "400h" ]; then
+  NB_EPOCHS=150
+elif [ "$SIZE" == "800h" ]; then
+  NB_EPOCHS=100
+elif [ "$SIZE" == "1600h" ]; then
+  NB_EPOCHS=80
+elif [ "$SIZE" == "3200h" ]; then
+  # CPC big has been trained on 32 GPUS for 30 epochs
+  NB_EPOCHS=50;
+else
+  echo "Not possible to deduce the number of epochs from the size of the training set."
+  echo "You should check that you haven't called train_cpc_big.sh with a training set whose size is lower or equal than 200h"
+  exit
+fi;
 
 if [ -f ${PATH_CPT}/running.state ]; then
   echo "${PATH_CPT}/running.state found. Not running anything."
   exit
 fi;
 
+mkdir -p $PATH_CPT
 touch ${PATH_CPT}/running.state
 python CPC_audio/cpc/train.py --pathCheckpoint ${PATH_CPT} \
-                           --pathDB ${PATH_DB} --max_size_loaded 400000000 \
-                           --file_extension .wav --nLevelsGRU 4 --hiddenEncoder 512 --hiddenGar 512 --save_step 1
+                           --pathDB ${PATH_DB} --max_size_loaded 200000000 \
+                           --file_extension .wav --nLevelsGRU 4 --hiddenEncoder 512 --hiddenGar 512 --save_step 1 \
+                           --multihead_rnn --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
+                           --batchSizeGPU 16 --rnnMode transformer
 
 rm ${PATH_CPT}/running.state
 if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then

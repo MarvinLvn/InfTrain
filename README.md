@@ -43,13 +43,12 @@ The `experiments` folder contain scripts to generate the different experiments (
 
 ```bash
 conda env create -f environment.yml && conda activate inftrain
-git clone https://github.com/tuanh208/CPC_audio.git 
+git clone https://github.com/tuanh208/CPC_torch.git
 ```
 
 To train models, you must install the following dependencies : 
 
-
-- [CPC models and K-means](https://github.com/tuanh208/CPC_audio)
+- [CPC models and K-means](https://github.com/fairinternal/CPC_torch) (FAIR only)
 - [Language models](https://github.com/pytorch/fairseq)
 
 Please refer to [this git repo](https://github.com/bootphon/zerospeech2021_baseline) for instructions about how to train the model
