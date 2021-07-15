@@ -82,3 +82,17 @@ Once you generated experiment files, you can check their content and then run :
 
 None of the scripts to train k-means and language models work now. 
 Those should be finished and thoroughly checked before running anything.
+
+# Submit training individually :
+
+CPC small : 
+
+```bash
+sbatch -o my_log_cpc_small_srun.txt trainers/train_cpc_small.sh /gpfsscratch/rech/cfs/commun/families/EN/50h/00
+```
+
+CPC big :
+
+```bash
+sbatch -o my_log_cpc_big.txt trainers/train_cpc_big.sh /gpfsscratch/rech/cfs/commun/families/EN/3200h/00
+```
