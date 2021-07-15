@@ -92,7 +92,15 @@ sbatch submit_cpc_small.sh
 sbatch submit_cpc_big.sh
 ```
 
-None of the scripts to train k-means and language models work now. 
+One can control the job ids that need to be run with the `--array` parameter :
+
+```bash
+sbatch --array=0-5 submit_cpc_small.sh
+```
+
+will only run the first 5 jobs (correspond to the first 5 lines of cpc_experiments.txt)
+
+WARNING : None of the scripts to train k-means and language models work now. 
 Those should be finished and thoroughly checked before running anything.
 
 # Submit training individually :
@@ -108,14 +116,6 @@ CPC big :
 ```bash
 sbatch -o my_log_cpc_big.txt trainers/train_cpc_big.sh /gpfsscratch/rech/cfs/commun/families/EN/3200h/00
 ```
-
-One can control the job ids that need to be run with the `--array` parameter :
-
-```bash
-sbatch -o my_log_cpc_small_srun.txt trainers/train_cpc_small.sh --array=0-5 /gpfsscratch/rech/cfs/commun/families/EN/50h/00
-```
-
-will only run the first 5 jobs (correspond to the first 5 lines of cpc_experiments.txt)
 
 
 # How it works ?
