@@ -1,13 +1,21 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
 #SBATCH --partition=gpu_p2            # access to octo-gpus machines
-#SBATCH --nodes=1                     # nombre de noeud
+#SBATCH --nodes=4                     # nombre de noeud
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=24
+#SBATCH --mem-per-cpu=12G
 #SBATCH --gres=gpu:8                  # nombre de GPUs par nœud
-#SBATCH --time=20:00:00
+#SBATCH --time=100:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --exclusive
 
+# Across-machines training
+export MASTER=`hostname`
+export MASTER_PORT=13369
+export NCCL_DEBUG=INFO # for debugging
 
+# Script parameters
 PATH_DB=$1
 SHARE=$(basename $(dirname $MODEL_PATH))
 SIZE=$(basename $(dirname $(dirname $MODEL_PATH)))

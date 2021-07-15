@@ -38,3 +38,20 @@ Files should be organized as follows :
 
 The `trainers` folder contain scripts to train the different models (CPC, K-means, BERT, lstm).
 The `experiments` folder contain scripts to generate the different experiments (training set, model, model parameters). These scripts should generate the configuration of each experiment in a `.txt` file whose each line will be submitted via a [slurm job array](http://www.idris.fr/jean-zay/cpu/jean-zay-cpu-exec_jobarray.html)
+
+# Installation
+
+```bash
+conda env create -f environment.yml && conda activate inftrain
+git clone https://github.com/tuanh208/CPC_audio.git 
+```
+
+To train models, you must install the following dependencies : 
+
+
+- [CPC models and K-means](https://github.com/tuanh208/CPC_audio)
+- [Language models](https://github.com/pytorch/fairseq)
+
+Please refer to [this git repo](https://github.com/bootphon/zerospeech2021_baseline) for instructions about how to train the model
+
+To evaluate models, you must install the [ZeroSpeech 2021 repo](https://github.com/bootphon/zerospeech2021)
