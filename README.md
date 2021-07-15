@@ -70,8 +70,12 @@ This will create experiment files in the `experiment_txt` folder.
 There's one experiment file for each model, and each line of an experiment file contains the path to the training set.
 The information of which model needs to be trained is automatically deduced from the training set path.
 
-Once you generated experiment files, you can train CPC models by running :
+Once you generated experiment files, you can check their content and then run :
 
 ```bash
+# To submit CPC small models
+./submit_cpc_small.sh
 
+# To submit CPC big models
+./submit_cpc_big.sh
 ```
