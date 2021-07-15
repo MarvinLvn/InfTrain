@@ -109,6 +109,15 @@ CPC big :
 sbatch -o my_log_cpc_big.txt trainers/train_cpc_big.sh /gpfsscratch/rech/cfs/commun/families/EN/3200h/00
 ```
 
+One can control the job ids that need to be run with the `--array` parameter :
+
+```bash
+sbatch -o my_log_cpc_small_srun.txt trainers/train_cpc_small.sh --array=0-5 /gpfsscratch/rech/cfs/commun/families/EN/50h/00
+```
+
+will only run the first 5 jobs (correspond to the first 5 lines of cpc_experiments.txt)
+
+
 # How it works ?
 
 Each time a model is trained, let's say in `EN/50h/00/cpc_small`, a file `running.state` is created.

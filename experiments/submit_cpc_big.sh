@@ -10,7 +10,7 @@
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --exclusive
-#SBATCH --array=1-14%14
+#SBATCH --array=0-14%14
 
 # This script submits CPC big training experiments.
 # It will submit 1 job per line of experiments_txt/cpc_big_experiments.txt

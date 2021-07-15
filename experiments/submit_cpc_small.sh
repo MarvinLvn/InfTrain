@@ -8,7 +8,7 @@
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --exclusive
-#SBATCH --array=1-240%60
+#SBATCH --array=0-240%60
 
 # This script submits CPC small training experiments.
 # It will submit 1 job per line of experiments_txt/cpc_small_experiments.txt
