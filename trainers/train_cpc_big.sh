@@ -3,7 +3,6 @@
 #SBATCH --partition=gpu_p2            # access to octo-gpus machines
 #SBATCH --nodes=4                     # nombre de noeud
 #SBATCH --ntasks-per-node=8
-#SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:8                  # nombre de GPUs par nœud
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
