@@ -24,15 +24,15 @@ if [ $SIZE -ge 800 ]; then
 fi;
 
 # Train CPC
-if [ ! -f ${MODEL_PATH}/{CPC}/done.state ]; then
+if [ ! -f ${MODEL_PATH}/${CPC}/done.state ]; then
   # Redirect to cpc_small_experiments.txt and cpc_big_experiments.txt
   echo ${PATH_DB} >> experiments_txt/${CPC}_experiments.txt
   exit
-elif [ ! -f ${MODEL_PATH}/{KMEANS}/done.state ]; then
+elif [ ! -f ${MODEL_PATH}/${KMEANS}/done.state ]; then
   # Redirect to kmeans_experiments.txt
   echo ${PATH_DB} >> experiments_txt/kmeans_experiments.txt
   exit
-elif [ ! -f ${MODEL_PATH}/{LM}/done.state ]; then
+elif [ ! -f ${MODEL_PATH}/${LM}/done.state ]; then
   # Redirect to lstm_experiments.txt and bert_large_experiments.txt
   echo ${PATH_DB} >> experiments_txt/${LM}_experiments.txt
   exit
