@@ -63,6 +63,6 @@ srun python -u /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --p
 
 
 rm ${PATH_CPT}/running.state
-if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then
+if [ -f ${PATH_CPT}/checkpoint_$(($NB_EPOCHS-1)).pt ]; then
   touch ${PATH_CPT}/done.state
 fi;
