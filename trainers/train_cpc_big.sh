@@ -56,10 +56,10 @@ mkdir -p $PATH_CPT
 touch ${PATH_CPT}/running.state
 echo "Start training $PATH_CPT"
 module load sox
-srun python -u /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
+srun python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
                            --pathDB ${PATH_DB} --restart --max_size_loaded 200000000 \
                            --file_extension .wav --nLevelsGRU 4 --hiddenEncoder 512 --hiddenGar 512 --save_step 1 \
-                           --multihead_rnn --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
+                           --multihead_rnn --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --dropout \
                            --batchSizeGPU 16 --rnnMode transformer --distributed --master_port $MASTER_PORT
 
 rm ${PATH_CPT}/running.state

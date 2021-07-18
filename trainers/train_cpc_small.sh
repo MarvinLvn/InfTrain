@@ -55,7 +55,7 @@ touch ${PATH_CPT}/running.state
 
 echo "Start training $PATH_CPT"
 module load sox
-srun python -u /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
+srun python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
                            --pathDB ${PATH_DB} --restart \
                            --file_extension .wav --nLevelsGRU 2 --save_step 2 --multihead_rnn --restart \
                            --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
