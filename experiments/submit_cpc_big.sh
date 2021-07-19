@@ -1,10 +1,9 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
 #SBATCH --output=logs/cpc_big_%A_%a.out
-#SBATCH --partition=gpu_p2            # access to octo-gpus machines
-#SBATCH --nodes=4                     # nombre de noeud
-#SBATCH --ntasks-per-node=8
-#SBATCH --gres=gpu:8                  # nombre de GPUs par nœud
+#SBATCH --nodes=8                     # nombre de noeud
+#SBATCH --ntasks-per-node=4
+#SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --exclusive
