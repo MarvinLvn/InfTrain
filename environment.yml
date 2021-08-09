@@ -18,6 +18,11 @@ dependencies:
   - torchvision
   - torchaudio
   - tqdm
+  - click
+  - pyyaml
+  - scipy
+  - joblib
+  - pandas
   - pip:
       - progressbar2
       - "git+https://github.com/MarvinLvn/CPC_torch.git"
