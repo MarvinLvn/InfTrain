@@ -45,6 +45,7 @@ The `experiments` folder contain scripts to generate the different experiments (
 module load sox
 conda env create -f environment.yml && conda activate inftrain
 git clone https://github.com/MarvinLvn/CPC_torch.git
+git clone https://github.com/bootphon/zerospeech2021_baseline
 ```
 
 To train models, you must install the following dependencies : 
@@ -136,8 +137,6 @@ Will the `running.state` file be removed ? If no, we'll have to remove them manu
 # What needs to be done ?
 - Submit CPC big models
 - Check CPC models are running / converging (plot validation loss for different training duration)
-- ok - Check generate_study.sh has the right behavior : resubmitting models that need to be resubmitted, not resubmitting models that are done
-- Done - Create a python script or jupyter notebook that shows the progress of the study : how many CPC models have been fully trained ? K-means ? Languages models ? Etc
 - Prepare submission scripts for all the metrics : ABX, sSIMI, sBLIMP, sWUGGY (see with Nick)
 - Finish submission scripts to train k-means and language models.
 - Create submission scripts to extract discrete-representation
