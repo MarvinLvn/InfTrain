@@ -18,7 +18,6 @@
 ##
 ## ENVIRONMENT VARIABLES :
 ##
-## OUTPUT_LOCATION               the location to write result files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models_eval).
 ## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
 ## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
 ## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
@@ -26,6 +25,7 @@
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## GRU_LEVEL
+## UTIL_SCRIPTS                  the root location of utility scripts (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils)
 ##
 ## More info:
 ## https://github.com/bootphon/zerospeech2021_baseline
@@ -65,7 +65,6 @@ function die() {
 [ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
 [ $# -lt 1 ] && usage
 
-OUTPUT_LOCATION="${OUTPUT_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models_eval}"
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
@@ -73,12 +72,13 @@ BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/zer
 FILE_EXT="${FILE_EXTENSION:-wav}"
 GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
+UTIL_SCRIPTS="${UTIL_SCRIPTS:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils}"
 
 PATH_TO_FAMILY=$1
 shift;
 
 # check scripts locations
-BEST_EPOCH_PY="$(dirname $here)/utils/best_val_epoch.py"
+BEST_EPOCH_PY="${UTIL_SCRIPTS}/best_val_epoch.py"
 
 [ ! -f "$BEST_EPOCH_PY" ] && die "utils/best_val_epoch.py script was not found here : $BEST_EPOCH_PY"
 [ ! -f "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" ] && die "CPC feature build was not found in ${BASELINE_SCRIPTS}/scripts"
@@ -88,14 +88,17 @@ BEST_EPOCH_PY="$(dirname $here)/utils/best_val_epoch.py"
 FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 CPC_CHECKPOINT_FILE=""
+OUTPUT_LOCATION="${CHECKPOINT_LOCATION}"
 
 # Find best epoch checkpoint to use for evaluation
 if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_small/checkpoint_${BEST_EPOCH}.pt"
+  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/cpc_small/ABX/${BEST_EPOCH}"
 elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_big")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_big/checkpoint_${BEST_EPOCH}.pt"
+  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/cpc_big/ABX/${BEST_EPOCH}"
 else
   die "No CPC checkpoints found for family ${FAMILY_ID}"
 fi
