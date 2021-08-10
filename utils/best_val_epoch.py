@@ -18,6 +18,8 @@ def main(argv):
                         help='Will select models whose epoch is more than --min')
     parser.add_argument('--max', type=int, required=False, default=None,
                         help='Will select models whose epoch is less than --max')
+    parser.add_argument('--output-id', action='store_true',
+                        help='output only the id of the best epoch')
     args = parser.parse_args(argv)
 
     if not os.path.isdir(args.model_path):
@@ -49,7 +51,10 @@ def main(argv):
     opt_idx = np.argmax(acc_val)
     opt_epoch = cp_idxs[opt_idx] 
 
-    print("Best epoch with an average accuracy of %f on the validation set is : %d" % (acc_val[opt_idx], opt_epoch))
+    if args.output_path:
+        print(opt_epoch)
+    else:
+        print("Best epoch with an average accuracy of %f on the validation set is : %d" % (acc_val[opt_idx], opt_epoch))
 
 
 if __name__ == "__main__":

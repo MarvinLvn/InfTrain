@@ -1,12 +1,9 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --partition=gpu_p2            # access to octo-gpus machines
-#SBATCH --nodes=1                     # nombre de noeud
-#SBATCH --gres=gpu:8                  # nombre de GPUs par nœud
-#SBATCH --time=20:00:00
-#SBATCH --hint=nomultithread          # hyperthreading desactive
-#SBATCH --exclusive
-## Usage: ./evaluate_cpc.sh CPC_CHECKPOINT_FILE OUTPUT_LOCATION
+#SBATCH --partition=prepost
+#SBATCH --nodes=1
+#SBATCH --time=10:00:00
+## Usage: ./evaluate_cpc.sh /path/to/duration/family_id
 ##
 ## 1) Extract CPC representations on zerospeech2021/phonetic (script : scripts/build_CPC_features.py)
 ## 2) Compute ABX error rate (command : zerospeech2021-evaluate)
@@ -17,13 +14,15 @@
 ##
 ## Parameters:
 ##
-##   CPC_CHECKPOINT_FILE         the path to the .pt file to use as the CPC model.
-##   OUTPUT_LOCATION             the location to write result files.
+##   FAMILY_PATH (ID)            the path to the family that we want to evaluate.
 ##
-## ENVIRONMENT VARIABLES
+## ENVIRONMENT VARIABLES :
 ##
-## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /scratch1/projects/zerospeech/2021/zerospeech2021_dataset)
-## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../external_code/zerospeech2021_baseline)
+## OUTPUT_LOCATION               the location to write result files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models_eval).
+## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
+## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
+## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## GRU_LEVEL
@@ -32,11 +31,10 @@
 ## https://github.com/bootphon/zerospeech2021_baseline
 ## https://docs.google.com/spreadsheets/d/1pcT_6YLdQ5Oa2pO21mRKzzU79ZPUZ-BfU2kkXg2mayE/edit?usp=drive_web&ouid=112305914309228781110
 
-echo "This script hasn't been tested."
-exit 0
+#echo "This script hasn't been tested."
+#exit 0
 
 # todo check slurm parameters & options
-
 # --- Various utility functions & variables
 
 # absolute path to the directory where this script is
@@ -65,35 +63,65 @@ function die() {
 # --- Input Validation & Processing
 # input arguments
 [ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
-[ $# -lt 2 ] && usage
+[ $# -lt 1 ] && usage
 
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/scratch1/projects/zerospeech/2021/zerospeech2021_dataset}"
-BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-$(dirname "$here")/external_code/zerospeech2021_baseline}"
+OUTPUT_LOCATION="${OUTPUT_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models_eval}"
+MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
+FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
+BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 
-CPC_CHECKPOINT_FILE=$1
-OUTPUT_LOCATION=$2
-shift; shift;
+PATH_TO_FAMILY=$1
+shift;
+
+# check scripts locations
+[ ! -f "$(dirname $here/utils/best_val_epoch.py)" ]
+[ ! -f "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" ] && die "CPC feature build was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -x "$(command -v zerospeech2021-evaluate)" ] && die "zerospeech2021-evaluate command was not found, it needs to be installed to allow evaluation"
+
+
+FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
+CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
+CPC_CHECKPOINT_FILE=""
+
+# Find best epoch checkpoint to use for evaluation
+if [ -d "${CHECKPOINT_LOCATION}/cpc_small"]; then
+  BEST_EPOCH="$(python $here/utils/best_val_epoch.py --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
+  CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_small/checkpoint_${BEST_EPOCH}.pt"
+elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
+  BEST_EPOCH="$(python $here/utils/best_val_epoch.py --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
+  CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_big/checkpoint_${BEST_EPOCH}.pt"
+else
+  die "No CPC checkpoints found for family ${FAMILY_ID}"
+fi
 
 #--debug
-#echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
-#echo "baseline-scripts: $BASELINE_SCRIPTS"
-#echo "checkpoint-file: $CPC_CHECKPOINT_FILE"
-#echo "output-location: $OUTPUT_LOCATION"
-#echo "file-extension: $FILE_EXT"
+echo "family-id: $FAMILY_ID"
+echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
+echo "model-location: $MODEL_LOCATION"
+echo "families-location: $FAMILIES_LOCATION"
+echo "baseline-scripts: $BASELINE_SCRIPTS"
+echo "checkpoint-file: $CHECKPOINT_LOCATION"
+echo "output-location: $OUTPUT_LOCATION"
+echo "file-extension: $FILE_EXT"
+echo "gru_level: $GRU_LEVEL"
+echo "nb-jobs: $NB_JOBS"
 
 # Verify INPUTS
 [ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
-[ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS not found: $BASELINE_SCRIPTS"
-[ ! -f $CPC_CHECKPOINT_FILE ] && [ "${CPC_CHECKPOINT_FILE: -3}" == ".pt" ] && die "Checkpoint file given does not exist or is not a valid .pt file: $CPC_CHECKPOINT_FILE"
+[ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS path not found: $BASELINE_SCRIPTS"
+[ ! -d $MODEL_LOCATION ] && die "Model location does not exist: $MODEL_LOCATION"
+[ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
+[ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
+
+OUTPUT_LOCATION="${OUTPUT_LOCATION}${FAMILY_ID}"
 
 mkdir -p $OUTPUT_LOCATION/features/phonetic/{'dev-clean','dev-other','test-clean','test-other'}
 
-# check that script exists
-[ ! -f "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" ] && die "CPC feature build was not found in ${BASELINE_SCRIPTS}/scripts"
-
+exit 0
 for item in 'dev-clean' 'dev-other' 'test-clean' 'test-other'
 do
   datafiles="${ZEROSPEECH_DATASET}/phonetic/${item}"
@@ -129,3 +157,6 @@ EOF
 export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
 
 zerospeech2021-evaluate --no-lexical --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/phonetic" $ZEROSPEECH_DATASET $FEATURES_LOCATION
+
+# clean feature files
+[ -d "${FEATURES_LOCATION}" ] && rm -rf "${FEATURES_LOCATION}"
