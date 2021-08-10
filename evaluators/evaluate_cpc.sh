@@ -78,7 +78,9 @@ PATH_TO_FAMILY=$1
 shift;
 
 # check scripts locations
-[ ! -f "$(dirname $here/utils/best_val_epoch.py)" ]
+BEST_EPOCH_PY="$(dirname $here)/utils/best_val_epoch.py)"
+
+[ ! -f "$BEST_EPOCH_PY" ] && die "utils/best_val_epoch.py script was not found here : $BEST_EPOCH_PY"
 [ ! -f "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" ] && die "CPC feature build was not found in ${BASELINE_SCRIPTS}/scripts"
 [ ! -x "$(command -v zerospeech2021-evaluate)" ] && die "zerospeech2021-evaluate command was not found, it needs to be installed to allow evaluation"
 
@@ -88,11 +90,11 @@ CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 CPC_CHECKPOINT_FILE=""
 
 # Find best epoch checkpoint to use for evaluation
-if [ -d "${CHECKPOINT_LOCATION}/cpc_small"]; then
-  BEST_EPOCH="$(python $here/utils/best_val_epoch.py --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
+if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
+  BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_small/checkpoint_${BEST_EPOCH}.pt"
 elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
-  BEST_EPOCH="$(python $here/utils/best_val_epoch.py --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
+  BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_big")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_big/checkpoint_${BEST_EPOCH}.pt"
 else
   die "No CPC checkpoints found for family ${FAMILY_ID}"
