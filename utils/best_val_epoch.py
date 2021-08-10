@@ -51,7 +51,7 @@ def main(argv):
     opt_idx = np.argmax(acc_val)
     opt_epoch = cp_idxs[opt_idx] 
 
-    if args.output_path:
+    if args.output_id:
         print(opt_epoch)
     else:
         print("Best epoch with an average accuracy of %f on the validation set is : %d" % (acc_val[opt_idx], opt_epoch))
