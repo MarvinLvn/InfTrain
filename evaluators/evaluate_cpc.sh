@@ -32,9 +32,8 @@
 ## https://docs.google.com/spreadsheets/d/1pcT_6YLdQ5Oa2pO21mRKzzU79ZPUZ-BfU2kkXg2mayE/edit?usp=drive_web&ouid=112305914309228781110
 
 # check only parameters without running eval
-DRY_RUN="false"
+DRY_RUN="${DRY_RUN:-false}"
 
-# todo check slurm parameters & options
 # --- Various utility functions & variables
 
 # absolute path to the directory where this script is
@@ -103,9 +102,21 @@ else
   die "No CPC checkpoints found for family ${FAMILY_ID}"
 fi
 
-#--debug print values
+# Verify INPUTS
+[ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
+[ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS path not found: $BASELINE_SCRIPTS"
+[ ! -d $MODEL_LOCATION ] && die "Model location does not exist: $MODEL_LOCATION"
+[ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
+[ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
+
+
+FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
+mkdir -p $FEATURES_LOCATION/phonetic/{'dev-clean','dev-other','test-clean','test-other'}
+
+#--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
   echo "family-id: $FAMILY_ID"
+  echo "features-location: $FEATURES_LOCATION"
   echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
   echo "model-location: $MODEL_LOCATION"
   echo "families-location: $FAMILIES_LOCATION"
@@ -115,21 +126,6 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "file-extension: $FILE_EXT"
   echo "gru_level: $GRU_LEVEL"
   echo "nb-jobs: $NB_JOBS"
-fi
-
-# Verify INPUTS
-[ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
-[ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS path not found: $BASELINE_SCRIPTS"
-[ ! -d $MODEL_LOCATION ] && die "Model location does not exist: $MODEL_LOCATION"
-[ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
-[ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
-
-OUTPUT_LOCATION="${OUTPUT_LOCATION}${FAMILY_ID}"
-
-mkdir -p $OUTPUT_LOCATION/features/phonetic/{'dev-clean','dev-other','test-clean','test-other'}
-
-#--debug exit before calling eval
-if [[ $DRY_RUN == "true" ]]; then
   exit 0
 fi
 
@@ -137,16 +133,15 @@ fi
 for item in 'dev-clean' 'dev-other' 'test-clean' 'test-other'
 do
   datafiles="${ZEROSPEECH_DATASET}/phonetic/${item}"
-  output="${OUTPUT_LOCATION}/features/phonetic/${item}"
+  output="${FEATURES_LOCATION}/phonetic/${item}"
   python "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" "${CPC_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file-extension $FILE_EXT --gru_level $GRU_LEVEL
 done
 
 
 # -- Prepare for evaluation
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
 # meta.yaml (required by zerospeech2021-evaluate)
-cat <<EOF > $FEATURES_LOCATION
+cat <<EOF > $FEATURES_LOCATION/meta.yaml
 author: infantSim Train Eval
 affiliation: EHESS, ENS, PSL Research Univerity, CNRS and Inria
 description: >
@@ -168,7 +163,7 @@ EOF
 # required by zerospeech2021-evaluate to allow test evaluation
 export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
 
-zerospeech2021-evaluate --no-lexical --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/phonetic" $ZEROSPEECH_DATASET $FEATURES_LOCATION
+zerospeech2021-evaluate --no-lexical --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # clean feature files
 [ -d "${FEATURES_LOCATION}" ] && rm -rf "${FEATURES_LOCATION}"
