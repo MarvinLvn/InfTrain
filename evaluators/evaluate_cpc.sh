@@ -31,8 +31,8 @@
 ## https://github.com/bootphon/zerospeech2021_baseline
 ## https://docs.google.com/spreadsheets/d/1pcT_6YLdQ5Oa2pO21mRKzzU79ZPUZ-BfU2kkXg2mayE/edit?usp=drive_web&ouid=112305914309228781110
 
-#echo "This script hasn't been tested."
-#exit 0
+# check only parameters without running eval
+DRY_RUN="false"
 
 # todo check slurm parameters & options
 # --- Various utility functions & variables
@@ -100,17 +100,19 @@ else
   die "No CPC checkpoints found for family ${FAMILY_ID}"
 fi
 
-#--debug
-echo "family-id: $FAMILY_ID"
-echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
-echo "model-location: $MODEL_LOCATION"
-echo "families-location: $FAMILIES_LOCATION"
-echo "baseline-scripts: $BASELINE_SCRIPTS"
-echo "checkpoint-file: $CPC_CHECKPOINT_FILE"
-echo "output-location: $OUTPUT_LOCATION"
-echo "file-extension: $FILE_EXT"
-echo "gru_level: $GRU_LEVEL"
-echo "nb-jobs: $NB_JOBS"
+#--debug print values
+if [[ $DRY_RUN == "true" ]]; then
+  echo "family-id: $FAMILY_ID"
+  echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
+  echo "model-location: $MODEL_LOCATION"
+  echo "families-location: $FAMILIES_LOCATION"
+  echo "baseline-scripts: $BASELINE_SCRIPTS"
+  echo "checkpoint-file: $CPC_CHECKPOINT_FILE"
+  echo "output-location: $OUTPUT_LOCATION"
+  echo "file-extension: $FILE_EXT"
+  echo "gru_level: $GRU_LEVEL"
+  echo "nb-jobs: $NB_JOBS"
+fi
 
 # Verify INPUTS
 [ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
@@ -123,7 +125,12 @@ OUTPUT_LOCATION="${OUTPUT_LOCATION}${FAMILY_ID}"
 
 mkdir -p $OUTPUT_LOCATION/features/phonetic/{'dev-clean','dev-other','test-clean','test-other'}
 
-exit 0
+#--debug exit before calling eval
+if [[ $DRY_RUN == "true" ]]; then
+  exit 0
+fi
+
+# extract phonetic features
 for item in 'dev-clean' 'dev-other' 'test-clean' 'test-other'
 do
   datafiles="${ZEROSPEECH_DATASET}/phonetic/${item}"
