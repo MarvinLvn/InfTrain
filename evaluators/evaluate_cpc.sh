@@ -78,7 +78,7 @@ PATH_TO_FAMILY=$1
 shift;
 
 # check scripts locations
-BEST_EPOCH_PY="$(dirname $here)/utils/best_val_epoch.py)"
+BEST_EPOCH_PY="$(dirname $here)/utils/best_val_epoch.py"
 
 [ ! -f "$BEST_EPOCH_PY" ] && die "utils/best_val_epoch.py script was not found here : $BEST_EPOCH_PY"
 [ ! -f "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" ] && die "CPC feature build was not found in ${BASELINE_SCRIPTS}/scripts"
