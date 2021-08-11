@@ -3,14 +3,15 @@
 #SBATCH --partition=prepost
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
+##
 ## Usage: ./evaluate_cpc.sh /path/to/duration/family_id
 ##
-## 1) Extract CPC representations on zerospeech2021/phonetic (script : scripts/build_CPC_features.py)
-## 2) Compute ABX error rate (command : zerospeech2021-evaluate)
+## 1) Extract CPC representations on zerospeech2021/phonetic
+## 2) Compute ABX error rate
 ##
 ## Example:
 ##
-## ./evaluate_cpc.sh path/to/checkpoints/cpc/file.pt path/to/output
+## ./evaluate_cpc.sh /gpfsscratch/rech/cfs/commun/families/FR/50h/11
 ##
 ## Parameters:
 ##
@@ -20,12 +21,14 @@
 ##
 ## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
 ## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
-## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017)
 ## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## GRU_LEVEL
 ## UTIL_SCRIPTS                  the root location of utility scripts (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils)
+## ABX_PY                        the script to use for abx evaluation (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py)
+## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py)
 ##
 ## More info:
 ## https://github.com/bootphon/zerospeech2021_baseline
@@ -66,21 +69,20 @@ function die() {
 
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
-BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline}"
-FILE_EXT="${FILE_EXTENSION:-wav}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017}"
+ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py}"
+BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py}"
+FILE_EXT="${FILE_EXTENSION:-.wav}"
 GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
-UTIL_SCRIPTS="${UTIL_SCRIPTS:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils}"
 
 PATH_TO_FAMILY=$1
 shift;
 
 # check scripts locations
-BEST_EPOCH_PY="${UTIL_SCRIPTS}/best_val_epoch.py"
 
 [ ! -f "$BEST_EPOCH_PY" ] && die "utils/best_val_epoch.py script was not found here : $BEST_EPOCH_PY"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" ] && die "CPC feature build was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -f "${ABX_PY}" ] && die "ABX script was not found at : ${ABX_PY}"
 [ ! -x "$(command -v zerospeech2021-evaluate)" ] && die "zerospeech2021-evaluate command was not found, it needs to be installed to allow evaluation"
 
 
@@ -110,8 +112,7 @@ fi
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
 
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
-mkdir -p $FEATURES_LOCATION/phonetic/{'dev-clean','dev-other','test-clean','test-other'}
+mkdir -p $OUTPUT_LOCATION{french,english}/{1s,10s,120s}
 
 #--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
@@ -120,50 +121,26 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
   echo "model-location: $MODEL_LOCATION"
   echo "families-location: $FAMILIES_LOCATION"
-  echo "baseline-scripts: $BASELINE_SCRIPTS"
+  echo "scripts: (abx;$ABX_PY), (epoch;$BEST_EPOCH_PY)"
   echo "checkpoint-file: $CPC_CHECKPOINT_FILE"
   echo "output-location: $OUTPUT_LOCATION"
   echo "file-extension: $FILE_EXT"
   echo "gru_level: $GRU_LEVEL"
   echo "nb-jobs: $NB_JOBS"
+  echo "python $(which python)"
+  echo "for langs in (french, english)"
+  echo "for seconds in (1s, 10s, 120s)"
+  echo "compute abx $> python $ABX_PY from_checkpoint $\CPC_CHECKPOINT_FILE \$PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out \$PATH_OUT"
   exit 0
 fi
 
-# extract phonetic features
-for item in 'dev-clean' 'dev-other' 'test-clean' 'test-other'
+# ABX
+for lang in french english
 do
-  datafiles="${ZEROSPEECH_DATASET}/phonetic/${item}"
-  output="${FEATURES_LOCATION}/phonetic/${item}"
-  python "${BASELINE_SCRIPTS}/scripts/build_CPC_features.py" "${CPC_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file-extension $FILE_EXT --gru_level $GRU_LEVEL
+  for secs in 1s 10s 120s
+  do
+      PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${secs}/${secs}.item"
+      PATH_OUT="$OUTPUT_LOCATION/${lang}/${secs}"
+      python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+  done
 done
-
-
-# -- Prepare for evaluation
-
-# meta.yaml (required by zerospeech2021-evaluate)
-cat <<EOF > $FEATURES_LOCATION/meta.yaml
-author: infantSim Train Eval
-affiliation: EHESS, ENS, PSL Research Univerity, CNRS and Inria
-description: >
-  CPC-big (trained on librispeech 960), kmeans (trained on librispeech 100),
-  BERT (trained on librispeech 960 encoded with the quantized units). See
-  https://zerospeech.com/2021 for more details.
-open_source: true
-train_set: librispeech 100 and 960
-gpu_budget: 1536
-parameters:
-  phonetic:
-    metric: cosine
-    frame_shift: 0.01
-  semantic:
-    metric: cosine
-    pooling: max
-EOF
-
-# required by zerospeech2021-evaluate to allow test evaluation
-export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
-
-zerospeech2021-evaluate --no-lexical --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION" $ZEROSPEECH_DATASET $FEATURES_LOCATION
-
-# clean feature files
-[ -d "${FEATURES_LOCATION}" ] && rm -rf "${FEATURES_LOCATION}"
