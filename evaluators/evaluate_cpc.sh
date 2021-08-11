@@ -111,9 +111,6 @@ fi
 [ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
 
-
-mkdir -p $OUTPUT_LOCATION{french,english}/{1s,10s,120s}
-
 #--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
   echo "family-id: $FAMILY_ID"
@@ -141,6 +138,7 @@ do
   do
       PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${secs}/${secs}.item"
       PATH_OUT="$OUTPUT_LOCATION/${lang}/${secs}"
+      mkdir -p "$PATH_OUT"
       python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
   done
 done
