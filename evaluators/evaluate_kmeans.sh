@@ -1,0 +1,172 @@
+#!/bin/bash
+#SBATCH --account=cfs@gpu
+#SBATCH --partition=prepost
+#SBATCH --nodes=1
+#SBATCH --time=10:00:00
+##
+## Usage: ./evaluate_kmeans.sh /path/to/duration/family_id
+##
+## 1) quantize_audio
+## 2) build_1hot
+## 3) python eval/eval_ABX.py from_pre_computed ${PATH_FEATURE_DIR} $ITEM_PATH --file_extension .pt --out $OUTPUT_DIR --feature_size $FEAT_SIZE  --not_normalize
+##
+## Example:
+##
+## ./evaluate_kmeans.sh /gpfsscratch/rech/cfs/commun/families/FR/50h/11
+##
+## Parameters:
+##
+##   FAMILY_PATH (ID)            the path to the family that we want to evaluate.
+##
+## ENVIRONMENT VARIABLES :
+##
+## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
+## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017)
+## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline)
+## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
+## ABX_PY                        the script to use for abx evaluation (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py)
+## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py)
+##
+## More info:
+## https://github.com/MarvinLvn/CPC_torch
+## https://docs.google.com/spreadsheets/d/1pcT_6YLdQ5Oa2pO21mRKzzU79ZPUZ-BfU2kkXg2mayE/edit?usp=drive_web&ouid=112305914309228781110
+## https://github.com/bootphon/zerospeech2021_baseline
+
+# check only parameters without running eval
+DRY_RUN="${DRY_RUN:-false}"
+# clean up features after completion of evaluation
+CLEAN_UP="${CLEAN_UP:-true}"
+
+# --- Various utility functions & variables
+
+# grep double comment lines for usage
+function usage
+{
+    sed -nr 's/^## ?//p' ${BASH_SOURCE[0]}
+    exit 0
+}
+
+# console messaging
+msg() {
+  echo >&2 -e "${1-}"
+}
+
+# error exit
+function die() {
+  local msg=$1
+  local code=${2-1} # default exit status 1
+  msg "$msg"
+  exit "$code"
+}
+
+# --- Input Validation & Processing
+# input arguments
+[ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
+[ $# -lt 1 ] && usage
+
+# Paths
+MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
+FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017}"
+FILE_EXT="${FILE_EXTENSION:-.wav}"
+FEAT_SIZE="${FEAT_SIZE:-0.01}"
+
+# Scripts
+QUANTIZE_AUDIO_PY=${QUANTIZE_AUDIO_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline/scripts/quantize_audio.py}
+BUILD_1HOT_PY=${BUILD_1HOT_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline/scripts/build_1hot_features.py}
+ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py}"
+BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py}"
+
+# Arguments
+PATH_TO_FAMILY=$1
+shift;
+
+# check scripts locations
+[ ! -f "$BEST_EPOCH_PY" ] && die "best_val_epoch.py script was not at : $BEST_EPOCH_PY"
+[ ! -f "${ABX_PY}" ] && die "ABX script was not found at : ${ABX_PY}"
+[ ! -f "${QUANTIZE_AUDIO_PY}" ] && die "quantize_audio.py script was not found at : ${QUANTIZE_AUDIO_PY}"
+[ ! -f "${BUILD_1HOT_PY}" ] && die "build_1hot_features.py script was not found at : ${BUILD_1HOT_PY}"
+
+FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
+CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
+CHECKPOINT_FILE=""
+OUTPUT_LOCATION=""
+
+# Find best epoch checkpoint to use for evaluation
+if [ -d "${CHECKPOINT_LOCATION}/kmeans_50" ]; then
+  BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/kmeans_50")"
+  CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/kmeans_50/checkpoint_${BEST_EPOCH}.pt"
+  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/${BEST_EPOCH}"
+else
+  die "No CPC checkpoints found for family ${FAMILY_ID}"
+fi
+
+# Verify INPUTS
+[ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
+[ ! -d $MODEL_LOCATION ] && die "Model location does not exist: $MODEL_LOCATION"
+[ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
+[ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
+
+ # we test only on 1s duration files
+seconds="1s"
+
+#--debug print values && exit
+if [[ $DRY_RUN == "true" ]]; then
+  echo "-------------- VARIABLES ---------------------------"
+  echo "family-id: $FAMILY_ID"
+  echo "features-location: $FEATURES_LOCATION"
+  echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
+  echo "model-location: $MODEL_LOCATION"
+  echo "families-location: $FAMILIES_LOCATION"
+  echo "scripts: (abx;$ABX_PY), (epoch;$BEST_EPOCH_PY)"
+  echo "checkpoint-file: $CHECKPOINT_FILE"
+  echo "output-location: $OUTPUT_LOCATION"
+  echo "file-extension: $FILE_EXT"
+  echo "python $(which python)"
+  echo "-------------- CMDs ---------------------------"
+fi
+
+
+for lang in french english
+do
+  DATA="${ZEROSPEECH_DATASET}/${lang}/1s"
+  ITEM_PATH="${DATA}/${lang}/1s/1s.item"
+
+  QUANTIZE_PATH="${OUTPUT_LOCATION}/features/quantized/${lang}"
+  QUANTIZED_OUTPUTS_TXT="${OUTPUT_LOCATION}/features/quantized/${lang}/quantized_outputs.txt"
+  ONE_HOT_FEATURES="${OUTPUT_LOCATION}/features/onehot/${lang}"
+
+  PATH_OUT="$OUTPUT_LOCATION/${lang}"
+
+  if [[ $DRY_RUN == "true" ]]; then
+    echo "--------"
+    echo "=> python $QUANTIZE_AUDIO_PY $CHECKPOINT_FILE $DATA $QUANTIZE_PATH --file_extension $FILE_EXT"
+    echo "--------"
+    echo "=> python $BUILD_1HOT_PY $QUANTIZED_OUTPUTS_TXT $ONE_HOT_FEATURES"
+    echo "--------"
+    echo "=> python $ABX_PY from_pre_computed $ONE_HOT_FEATURES $ITEM_PATH --file_extension .pt --out $PATH_OUT --feature_size $FEAT_SIZE  --not_normalize"
+  else
+    mkdir -p "$QUANTIZE_PATH"
+    python $QUANTIZE_AUDIO_PY $CHECKPOINT_FILE $DATA QUANTIZE_PATH --file_extension $FILE_EXT
+
+    # check if output was created successfully
+    [ ! "$(ls -A $OUT_PATH)" ] && die "quantize_audio process failed for $lang"
+    [ ! -f "${QUANTIZED_OUTPUTS_TXT}" ] && die "quantized_outputs.txt was not found in $QUANTIZE_PATH"
+
+    mkdir -p "$ONE_HOT_FEATURES"
+    python $BUILD_1HOT_PY $QUANTIZED_OUTPUTS_TXT $ONE_HOT_FEATURES
+
+    [ ! "$(ls -A $ONE_HOT_FEATURES)" ] && die "quantize_audio process failed for $lang"
+
+    python $ABX_PY from_pre_computed $ONE_HOT_FEATURES $ITEM_PATH --file_extension .pt --out $PATH_OUT --feature_size $FEAT_SIZE  --not_normalize
+  fi
+done
+
+
+if [[ $CLEAN_UP == "true" ]]; then
+  echo "cleaning up ${OUTPUT_LOCATION}/features ..."
+  rm -rf "${OUTPUT_LOCATION}/features"
+fi
+
+echo "evaluation of $FAMILY_ID complete. ABX scores can be found @ $OUTPUT_LOCATION"
