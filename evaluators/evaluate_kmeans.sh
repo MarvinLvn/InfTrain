@@ -73,9 +73,7 @@ FILE_EXT="${FILE_EXTENSION:-.wav}"
 FEAT_SIZE="${FEAT_SIZE:-0.01}"
 
 # Scripts
-QUANTIZE_AUDIO_PY=${QUANTIZE_AUDIO_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline/scripts/quantize_audio.py}
-BUILD_1HOT_PY=${BUILD_1HOT_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline/scripts/build_1hot_features.py}
-ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py}"
+ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX_clustering.py}"
 BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py}"
 
 # Arguments
@@ -85,8 +83,6 @@ shift;
 # check scripts locations
 [ ! -f "$BEST_EPOCH_PY" ] && die "best_val_epoch.py script was not at : $BEST_EPOCH_PY"
 [ ! -f "${ABX_PY}" ] && die "ABX script was not found at : ${ABX_PY}"
-[ ! -f "${QUANTIZE_AUDIO_PY}" ] && die "quantize_audio.py script was not found at : ${QUANTIZE_AUDIO_PY}"
-[ ! -f "${BUILD_1HOT_PY}" ] && die "build_1hot_features.py script was not found at : ${BUILD_1HOT_PY}"
 
 FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
@@ -99,7 +95,7 @@ if [ -d "${CHECKPOINT_LOCATION}/kmeans_50" ]; then
   CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/kmeans_50/checkpoint_${BEST_EPOCH}.pt"
   OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/${BEST_EPOCH}"
 else
-  die "No CPC checkpoints found for family ${FAMILY_ID}"
+  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
 fi
 
 # Verify INPUTS
@@ -108,8 +104,6 @@ fi
 [ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
 
- # we test only on 1s duration files
-seconds="1s"
 
 #--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
@@ -127,46 +121,21 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "-------------- CMDs ---------------------------"
 fi
 
-
 for lang in french english
 do
   DATA="${ZEROSPEECH_DATASET}/${lang}/1s"
   ITEM_PATH="${DATA}/${lang}/1s/1s.item"
 
-  QUANTIZE_PATH="${OUTPUT_LOCATION}/features/quantized/${lang}"
-  QUANTIZED_OUTPUTS_TXT="${OUTPUT_LOCATION}/features/quantized/${lang}/quantized_outputs.txt"
-  ONE_HOT_FEATURES="${OUTPUT_LOCATION}/features/onehot/${lang}"
-
   PATH_OUT="$OUTPUT_LOCATION/${lang}"
+  OUT_FILE="${PATH_OUT}/abx_scores.json"
 
   if [[ $DRY_RUN == "true" ]]; then
-    echo "--------"
-    echo "=> python $QUANTIZE_AUDIO_PY $CHECKPOINT_FILE $DATA $QUANTIZE_PATH --file_extension $FILE_EXT"
-    echo "--------"
-    echo "=> python $BUILD_1HOT_PY $QUANTIZED_OUTPUTS_TXT $ONE_HOT_FEATURES"
-    echo "--------"
-    echo "=> python $ABX_PY from_pre_computed $ONE_HOT_FEATURES $ITEM_PATH --file_extension .pt --out $PATH_OUT --feature_size $FEAT_SIZE  --not_normalize"
+    echo "=> python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE"
+    echo "-------------- END ---------------------------"
   else
-    mkdir -p "$QUANTIZE_PATH"
-    python $QUANTIZE_AUDIO_PY $CHECKPOINT_FILE $DATA QUANTIZE_PATH --file_extension $FILE_EXT
-
-    # check if output was created successfully
-    [ ! "$(ls -A $OUT_PATH)" ] && die "quantize_audio process failed for $lang"
-    [ ! -f "${QUANTIZED_OUTPUTS_TXT}" ] && die "quantized_outputs.txt was not found in $QUANTIZE_PATH"
-
-    mkdir -p "$ONE_HOT_FEATURES"
-    python $BUILD_1HOT_PY $QUANTIZED_OUTPUTS_TXT $ONE_HOT_FEATURES
-
-    [ ! "$(ls -A $ONE_HOT_FEATURES)" ] && die "quantize_audio process failed for $lang"
-
-    python $ABX_PY from_pre_computed $ONE_HOT_FEATURES $ITEM_PATH --file_extension .pt --out $PATH_OUT --feature_size $FEAT_SIZE  --not_normalize
+    mkdir -p $PATH_OUT
+    python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE
   fi
 done
-
-
-if [[ $CLEAN_UP == "true" ]]; then
-  echo "cleaning up ${OUTPUT_LOCATION}/features ..."
-  rm -rf "${OUTPUT_LOCATION}/features"
-fi
 
 echo "evaluation of $FAMILY_ID complete. ABX scores can be found @ $OUTPUT_LOCATION"
