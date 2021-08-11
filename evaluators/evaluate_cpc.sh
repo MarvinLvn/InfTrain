@@ -6,8 +6,9 @@
 ##
 ## Usage: ./evaluate_cpc.sh /path/to/duration/family_id
 ##
-## 1) Extract CPC representations on zerospeech2021/phonetic
+## 1) Extract CPC representations on zerospeech2017/{french, english}
 ## 2) Compute ABX error rate
+## This is done using abx evaluation in CPC_torch package
 ##
 ## Example:
 ##
@@ -26,12 +27,11 @@
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## GRU_LEVEL
-## UTIL_SCRIPTS                  the root location of utility scripts (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils)
 ## ABX_PY                        the script to use for abx evaluation (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py)
 ## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py)
 ##
 ## More info:
-## https://github.com/bootphon/zerospeech2021_baseline
+## https://github.com/MarvinLvn/CPC_torch
 ## https://docs.google.com/spreadsheets/d/1pcT_6YLdQ5Oa2pO21mRKzzU79ZPUZ-BfU2kkXg2mayE/edit?usp=drive_web&ouid=112305914309228781110
 
 # check only parameters without running eval
@@ -83,8 +83,6 @@ shift;
 
 [ ! -f "$BEST_EPOCH_PY" ] && die "utils/best_val_epoch.py script was not found here : $BEST_EPOCH_PY"
 [ ! -f "${ABX_PY}" ] && die "ABX script was not found at : ${ABX_PY}"
-[ ! -x "$(command -v zerospeech2021-evaluate)" ] && die "zerospeech2021-evaluate command was not found, it needs to be installed to allow evaluation"
-
 
 FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
@@ -106,7 +104,6 @@ fi
 
 # Verify INPUTS
 [ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
-[ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS path not found: $BASELINE_SCRIPTS"
 [ ! -d $MODEL_LOCATION ] && die "Model location does not exist: $MODEL_LOCATION"
 [ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
