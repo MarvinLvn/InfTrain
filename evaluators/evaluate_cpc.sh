@@ -111,6 +111,9 @@ fi
 [ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
 
+ # we test only on 1s duration files
+seconds="1s"
+
 #--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
   echo "family-id: $FAMILY_ID"
@@ -125,20 +128,20 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "gru_level: $GRU_LEVEL"
   echo "nb-jobs: $NB_JOBS"
   echo "python $(which python)"
-  echo "for langs in (french, english)"
-  echo "for seconds in (1s, 10s, 120s)"
-  echo "compute abx $> python $ABX_PY from_checkpoint $\CPC_CHECKPOINT_FILE \$PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out \$PATH_OUT"
+  echo "for langs in (french, english) using 1s files"
+  for lang in french english
+  do
+    PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
+    PATH_OUT="$OUTPUT_LOCATION/${lang}"
+    echo "==> python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT"
+  done
   exit 0
 fi
 
-# ABX
 for lang in french english
 do
-  for secs in 1s 10s 120s
-  do
-      PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${secs}/${secs}.item"
-      PATH_OUT="$OUTPUT_LOCATION/${lang}/${secs}"
+      PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
+      PATH_OUT="$OUTPUT_LOCATION/${lang}"
       mkdir -p "$PATH_OUT"
       python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
-  done
 done
