@@ -114,7 +114,6 @@ seconds="1s"
 #--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
   echo "family-id: $FAMILY_ID"
-  echo "features-location: $FEATURES_LOCATION"
   echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
   echo "model-location: $MODEL_LOCATION"
   echo "families-location: $FAMILIES_LOCATION"
@@ -138,7 +137,8 @@ fi
 for lang in french english
 do
       PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
+      LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
       PATH_OUT="$OUTPUT_LOCATION/${lang}"
       mkdir -p "$PATH_OUT"
-      python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+      python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT --debug
 done
