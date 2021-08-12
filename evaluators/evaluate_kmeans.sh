@@ -1,8 +1,10 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --partition=prepost
-#SBATCH --nodes=1
-#SBATCH --time=10:00:00
+#SBATCH --nodes=1                     # nombre de noeud
+#SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
+#SBATCH --time=20:00:00
+#SBATCH --hint=nomultithread          # hyperthreading desactive
+#SBATCH --cpus-per-task=10
 ##
 ## Usage: ./evaluate_kmeans.sh /path/to/duration/family_id
 ##
@@ -22,8 +24,7 @@
 ##
 ## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
 ## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
-## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017)
-## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## ABX_PY                        the script to use for abx evaluation (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py)
 ## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py)
@@ -68,7 +69,7 @@ function die() {
 # Paths
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test}"
 FILE_EXT="${FILE_EXTENSION:-.wav}"
 FEAT_SIZE="${FEAT_SIZE:-0.01}"
 
@@ -90,12 +91,16 @@ CHECKPOINT_FILE=""
 OUTPUT_LOCATION=""
 
 # Find best epoch checkpoint to use for evaluation
-if [ -d "${CHECKPOINT_LOCATION}/kmeans_50" ]; then
+#if [ -d "${CHECKPOINT_LOCATION}/kmeans_50" ]; then
+if [ -d "${CHECKPOINT_LOCATION}/bad_folder" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/kmeans_50")"
   CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/kmeans_50/checkpoint_${BEST_EPOCH}.pt"
   OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/${BEST_EPOCH}"
 else
-  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+#  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+  echo "debugging: remove this !!!"
+  CHECKPOINT_FILE="/gpfsstore/rech/cfs/commun/zr2021_models/checkpoints/CPC-small-kmeans50/clustering_kmeans50/clustering_CPC_small_kmeans50.pt"
+  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/50"
 fi
 
 # Verify INPUTS
@@ -131,10 +136,10 @@ do
 
   if [[ $DRY_RUN == "true" ]]; then
     echo "=> python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE"
-    echo "-------------- END ---------------------------"
+    echo "-----------------------------"
   else
     mkdir -p $PATH_OUT
-    python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE
+    srun python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE --debug
   fi
 done
 
