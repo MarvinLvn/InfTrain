@@ -129,7 +129,7 @@ fi
 for lang in french english
 do
   DATA="${ZEROSPEECH_DATASET}/${lang}/1s"
-  ITEM_PATH="${DATA}/${lang}/1s/1s.item"
+  ITEM_PATH="${DATA}/1s.item"
 
   PATH_OUT="$OUTPUT_LOCATION/${lang}"
   OUT_FILE="${PATH_OUT}/abx_scores.json"
