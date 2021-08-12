@@ -140,5 +140,5 @@ do
       LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
       PATH_OUT="$OUTPUT_LOCATION/${lang}"
       mkdir -p "$PATH_OUT"
-      python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT --debug
+      python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
 done
