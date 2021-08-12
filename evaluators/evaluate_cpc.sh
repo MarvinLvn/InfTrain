@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
 #SBATCH --partition=prepost
+#SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
 ##
@@ -40,13 +41,12 @@ DRY_RUN="${DRY_RUN:-false}"
 # --- Various utility functions & variables
 
 # absolute path to the directory where this script is
-here="$(cd $(dirname "${BASH_SOURCE[0]}") > /dev/null 2>&1 && pwd)"
+here="$(cd $(dirname "${BASH_SOURCE[0]}") >/dev/null 2>&1 && pwd)"
 
 # grep double comment lines for usage
-function usage
-{
-    sed -nr 's/^## ?//p' ${BASH_SOURCE[0]}
-    exit 0
+function usage() {
+  sed -nr 's/^## ?//p' ${BASH_SOURCE[0]}
+  exit 0
 }
 
 # console messaging
@@ -77,7 +77,7 @@ GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 
 PATH_TO_FAMILY=$1
-shift;
+shift
 
 # check scripts locations
 
@@ -108,7 +108,7 @@ fi
 [ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
 
- # we test only on 1s duration files
+# we test only on 1s duration files
 seconds="1s"
 
 #--debug print values && exit
@@ -125,8 +125,7 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "nb-jobs: $NB_JOBS"
   echo "python $(which python)"
   echo "for langs in (french, english) using 1s files"
-  for lang in french english
-  do
+  for lang in french english; do
     PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
     PATH_OUT="$OUTPUT_LOCATION/${lang}"
     echo "==> python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT"
@@ -134,11 +133,10 @@ if [[ $DRY_RUN == "true" ]]; then
   exit 0
 fi
 
-for lang in french english
-do
-      PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
-      LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
-      PATH_OUT="$OUTPUT_LOCATION/${lang}"
-      mkdir -p "$PATH_OUT"
-      python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+for lang in french english; do
+  PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
+  LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
+  PATH_OUT="$OUTPUT_LOCATION/${lang}"
+  mkdir -p "$PATH_OUT"
+  python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
 done
