@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
 #SBATCH --partition=prepost
+#SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
 ##
@@ -22,7 +23,7 @@
 ##
 ## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
 ## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
-## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test/)
 ## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
@@ -40,13 +41,12 @@ DRY_RUN="${DRY_RUN:-false}"
 # --- Various utility functions & variables
 
 # absolute path to the directory where this script is
-here="$(cd $(dirname "${BASH_SOURCE[0]}") > /dev/null 2>&1 && pwd)"
+here="$(cd $(dirname "${BASH_SOURCE[0]}") >/dev/null 2>&1 && pwd)"
 
 # grep double comment lines for usage
-function usage
-{
-    sed -nr 's/^## ?//p' ${BASH_SOURCE[0]}
-    exit 0
+function usage() {
+  sed -nr 's/^## ?//p' ${BASH_SOURCE[0]}
+  exit 0
 }
 
 # console messaging
@@ -69,7 +69,7 @@ function die() {
 
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test/}"
 ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py}"
 BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py}"
 FILE_EXT="${FILE_EXTENSION:-.wav}"
@@ -77,7 +77,7 @@ GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 
 PATH_TO_FAMILY=$1
-shift;
+shift
 
 # check scripts locations
 
@@ -108,13 +108,12 @@ fi
 [ ! -d $FAMILIES_LOCATION ] && die "Families location does not exist: $FAMILIES_LOCATION"
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
 
- # we test only on 1s duration files
+# we test only on 1s duration files
 seconds="1s"
 
 #--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
   echo "family-id: $FAMILY_ID"
-  echo "features-location: $FEATURES_LOCATION"
   echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
   echo "model-location: $MODEL_LOCATION"
   echo "families-location: $FAMILIES_LOCATION"
@@ -126,8 +125,7 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "nb-jobs: $NB_JOBS"
   echo "python $(which python)"
   echo "for langs in (french, english) using 1s files"
-  for lang in french english
-  do
+  for lang in french english; do
     PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
     PATH_OUT="$OUTPUT_LOCATION/${lang}"
     echo "==> python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT"
@@ -135,10 +133,10 @@ if [[ $DRY_RUN == "true" ]]; then
   exit 0
 fi
 
-for lang in french english
-do
-      PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
-      PATH_OUT="$OUTPUT_LOCATION/${lang}"
-      mkdir -p "$PATH_OUT"
-      python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+for lang in french english; do
+  PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
+  LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
+  PATH_OUT="$OUTPUT_LOCATION/${lang}"
+  mkdir -p "$PATH_OUT"
+  srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
 done
