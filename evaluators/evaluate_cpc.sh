@@ -1,9 +1,10 @@
 #!/bin/bash
-#SBATCH --account=cfs@gpu
+#SBATCH --account=ank@gpu
 #SBATCH --partition=prepost
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
+#SBATCH --output=experiments/logs/eval_cpc_%j.out
 ##
 ## Usage: ./evaluate_cpc.sh /path/to/duration/family_id
 ##
@@ -21,15 +22,16 @@
 ##
 ## ENVIRONMENT VARIABLES :
 ##
-## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
-## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
-## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test/)
+## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsssd/scratch/rech/ank/ucv88ce/projects/MultilingualCPC/checkpoints/inftrain)
+## EVAL_LOCATION                 the root directory which will contain the eval files (default : /gpfsssd/scratch/rech/ank/ucv88ce/projects/MultilingualCPC/checkpoints/inftrain/)
+## FAMILIES_LOCATION             the root directory containing source dataset with families (default:/gpfsssd/scratch/rech/cfs/commun/families)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/ank/ucv88ce/data/zerospeech/zerospeech2017_dataset/test/)
 ## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/zerospeech2021_baseline)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## GRU_LEVEL
-## ABX_PY                        the script to use for abx evaluation (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py)
-## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py)
+## ABX_PY                        the script to use for abx evaluation (default: /gpfsdswork/projects/rech/ank/ucv88ce/repos/CPC_torch/cpc/eval/eval_ABX.py)
+## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/utils/best_val_epoch.py)
 ##
 ## More info:
 ## https://github.com/MarvinLvn/CPC_torch
@@ -67,11 +69,12 @@ function die() {
 [ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
 [ $# -lt 1 ] && usage
 
-MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
-FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test/}"
-ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py}"
-BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py}"
+MODEL_LOCATION="${MODEL_LOCATION:-/gpfsssd/scratch/rech/ank/ucv88ce/projects/MultilingualCPC/checkpoints/inftrain/}"
+FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsssd/scratch/rech/cfs/commun/families/}"
+EVAL_LOCATION="${EVAL_LOCATION:-/gpfsssd/scratch/rech/ank/ucv88ce/projects/MultilingualCPC/eval/inftrain/}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/ank/ucv88ce/data/zerospeech/zerospeech2017_dataset/test/}"
+ABX_PY="${ABX_PY:-/gpfsdswork/projects/rech/ank/ucv88ce/repos/CPC_torch/cpc/eval/eval_ABX.py}"
+BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/utils/best_val_epoch.py}"
 FILE_EXT="${FILE_EXTENSION:-.wav}"
 GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
@@ -84,20 +87,20 @@ shift
 [ ! -f "$BEST_EPOCH_PY" ] && die "utils/best_val_epoch.py script was not found here : $BEST_EPOCH_PY"
 [ ! -f "${ABX_PY}" ] && die "ABX script was not found at : ${ABX_PY}"
 
-FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
+FAMILY_ID="${PATH_TO_FAMILY:${#FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 CPC_CHECKPOINT_FILE=""
-OUTPUT_LOCATION="${CHECKPOINT_LOCATION}"
+OUTPUT_LOCATION="${EVAL_LOCATION}${FAMILY_ID}"
 
 # Find best epoch checkpoint to use for evaluation
 if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_small/checkpoint_${BEST_EPOCH}.pt"
-  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/cpc_small/ABX/${BEST_EPOCH}"
+  OUTPUT_LOCATION="${OUTPUT_LOCATION}/cpc_small/ABX/${BEST_EPOCH}"
 elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_big")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_big/checkpoint_${BEST_EPOCH}.pt"
-  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/cpc_big/ABX/${BEST_EPOCH}"
+  OUTPUT_LOCATION="${OUTPUT_LOCATION}/cpc_big/ABX/${BEST_EPOCH}"
 else
   die "No CPC checkpoints found for family ${FAMILY_ID}"
 fi
@@ -133,10 +136,13 @@ if [[ $DRY_RUN == "true" ]]; then
   exit 0
 fi
 
+source activate inftrain
+
 for lang in french english; do
   PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
   LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
   PATH_OUT="$OUTPUT_LOCATION/${lang}"
+  echo $PATH_OUT
   mkdir -p "$PATH_OUT"
   srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
 done

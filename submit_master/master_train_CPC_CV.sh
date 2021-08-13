@@ -26,4 +26,4 @@ NB_EPOCHS=100 # originally 200
 
 mkdir -p ${PATH_CHECKPOINT_DIR}
 
-sbatch -o ${PATH_CHECKPOINT_DIR}/train_CPC_small.txt ./trainers/train_cpc_small.sh $PATH_AUDIO_FILES $PATH_CHECKPOINT_DIR $PATH_TRAIN $PATH_VAL $NB_EPOCHS
+sbatch -o ${PATH_CHECKPOINT_DIR}/train_CPC_small.txt ./trainers/train_cpc_small_CV.sh $PATH_AUDIO_FILES $PATH_CHECKPOINT_DIR $PATH_TRAIN $PATH_VAL $NB_EPOCHS
