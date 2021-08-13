@@ -6,7 +6,6 @@
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-#SBATCH --exclusive
 #SBATCH --array=0-240%60
 
 # This script submits CPC small training experiments.
