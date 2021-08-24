@@ -38,7 +38,13 @@ elif [ "$SIZE" == "100h" ]; then
 elif [ "$SIZE" == "200h" ]; then
   NB_EPOCHS=80
 elif [ "$SIZE" == "400h" ]; then
+  NB_EPOCHS=60;
+elif [ "$SIZE" == "800h" ]; then
   NB_EPOCHS=50;
+elif [ "$SIZE" == "1600h" ]; then
+  NB_EPOCHS=40;
+elif [ "$SIZE" == "3200h" ]; then
+  NB_EPOCHS=30;
 else
   echo "Not possible to deduce the number of epochs from the size of the training set."
   echo "You should check that you haven't called train_cpc_small.sh with a training set whose size is greater or equal than 800h"
@@ -58,7 +64,7 @@ srun python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --path
                            --pathDB ${PATH_DB} \
                            --file_extension .wav --nLevelsGRU 2 --save_step 2 --multihead_rnn \
                            --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
-                           --distributed --master_port $MASTER_PORT
+                           --distributed --master_port $MASTER_PORT --schedulerRamp 10
 
 
 rm ${PATH_CPT}/running.state
