@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --partition=prepost           # access to octo-gpus machines
+##SBATCH --partition=prepost           # access to octo-gpus machines
 #SBATCH --nodes=1                     # nombre de noeud
-##SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
+#SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 ## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID
@@ -90,7 +90,13 @@ else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
 fi
 
-shift; shift;
+
+# cpu option
+DEVICE="gpu"
+ARG=$2
+if [ "${ARG}" == "--cpu" ]; then
+    DEVICE="cpu"
+fi
 
 
 # Verify INPUTS
@@ -106,8 +112,6 @@ shift; shift;
 
 # -- Extract quantized units on zerospeech20201/syntactic
 
-mkdir -p $OUTPUT_LOCATION/features/syntactic/{'dev','test'}
-
 for item in ${KIND[*]}
 do
   datafiles="${ZEROSPEECH_DATASET}/syntactic/${item}"
@@ -118,13 +122,22 @@ done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
+if [ "$DEVICE" == "cpu" ] ; then
+  ARGUMENTS="--cpu"
+elif [ "$MODEL" == "LSTM" ] ; then
+  ARGUMENTS="--batchSize=64"
+fi;
+
 for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features/syntactic/${item}/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features/syntactic/$item.txt"
   bert_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" --batchSize=64
+  # python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}"
+  echo "python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}""
 done
+
+exit 0
 
 
 # Compute SWUGGY
