@@ -112,6 +112,8 @@ fi
 
 # -- Extract quantized units on zerospeech20201/syntactic
 
+mkdir -p $OUTPUT_LOCATION/features/syntactic/{'dev','test'}
+
 for item in ${KIND[*]}
 do
   datafiles="${ZEROSPEECH_DATASET}/syntactic/${item}"
