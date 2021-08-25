@@ -133,11 +133,8 @@ do
   quantized="$OUTPUT_LOCATION/features/syntactic/${item}/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features/syntactic/$item.txt"
   bert_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  # python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}"
-  echo "python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}""
+  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}"
 done
-
-exit 0
 
 
 # Compute SWUGGY
