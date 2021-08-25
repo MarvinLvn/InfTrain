@@ -1,11 +1,10 @@
 #!/bin/bash
-#SBATCH --account=xdz@gpu
+#SBATCH --account=cfs@gpu
 #SBATCH --partition=prepost           # access to octo-gpus machines
 #SBATCH --nodes=1                     # nombre de noeud
 ##SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-#SBATCH --exclusive
 ## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/syntactic
@@ -74,14 +73,24 @@ KIND=('dev')
 
 FAMILY_ID=$(echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")")
 
-# TODO : cpc_small or cpc_big
 
-CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/cpc_small/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
-OUTPUT_LOCATION="$FAMILY_ID/cpc_small"
+if [ -d "${FAMILY_ID}/cpc_small" ]; then
+  CPC="cpc_small"
+  MODEL="LSTM"
+else
+  CPC="cpc_big"
+  MODEL="BERT"
+fi
 
-# OUTPUT_LOCATION=$2
+OUTPUT_LOCATION="$FAMILY_ID/$CPC"
+
+if [ -d "${OUTPUT_LOCATION}/clustering_kmeans50" ]; then
+  CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
+else
+  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+fi
+
 shift; shift;
-
 
 
 # Verify INPUTS
@@ -92,7 +101,6 @@ shift; shift;
 
 # check that script exists
 [ ! -f "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" ] && die "Quantize audio was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/build_1hot_features.py" ] && die "Build 1-hot features was not found in ${BASELINE_SCRIPTS}/scripts"
 [ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_BERT.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}/scripts"
 [ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_LSTM.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}/scripts"
 
@@ -110,30 +118,12 @@ done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
-mkdir -p $OUTPUT_LOCATION/features/probabailities/{'dev','test'}
-
-
-# python compute_proba_{BERT,LSTM}.py pathQuantizedUnits pathOutputFile pathBERTCheckpoint
-# bert : > 400h
-# lstm : < 400h
-# 400h : both models TODO
-
-duration=$(echo ${CLUSTERING_CHECKPOINT_FILE} | cut -d'/' -f8 | sed "s/\h//g")
-
-if [ $duration -lt 401 ]
-then
-  MODEL="LSTM"
-else
-  MODEL="BERT"
-fi
-
-
 for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features/syntactic/${item}/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features/syntactic/$item.txt"
-  bert_checkpoint="$OUTPUT_LOCATION/LSTM/LSTM_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" --cpu
+  bert_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" --batchSize=64
 done
 
 
@@ -162,12 +152,11 @@ parameters:
 EOF
 
 # required by zerospeech2021-evaluate to allow test evaluation
-# export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
+if [[ ${KIND[*]} =~ (^|[[:space:]])"test"($|[[:space:]]) ]] ; then
+  export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
+fi;
 
-echo "evaluation with zerospeech2021-evaluate"
-
-zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/swuggy" $ZEROSPEECH_DATASET $FEATURES_LOCATION
-
+zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/sblimp" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # cleanup
 rm -r $OUTPUT_LOCATION/features
