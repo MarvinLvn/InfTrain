@@ -71,7 +71,7 @@ function die() {
 
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsssd/scratch/rech/ank/ucv88ce/projects/MultilingualCPC/checkpoints/inftrain/}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsssd/scratch/rech/cfs/commun/families/}"
-EVAL_LOCATION="${EVAL_LOCATION:-/gpfsssd/scratch/rech/ank/ucv88ce/projects/MultilingualCPC/eval/inftrain/}"
+EVAL_LOCATION="${EVAL_LOCATION:-/gpfsssd/scratch/rech/ank/ucv88ce/projects/MultilingualCPC/inftrain/}"
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/ank/ucv88ce/data/zerospeech/zerospeech2017_dataset/test/}"
 ABX_PY="${ABX_PY:-/gpfsdswork/projects/rech/ank/ucv88ce/repos/CPC_torch/cpc/eval/eval_ABX.py}"
 BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/utils/best_val_epoch.py}"
@@ -90,7 +90,8 @@ shift
 FAMILY_ID="${PATH_TO_FAMILY:${#FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 CPC_CHECKPOINT_FILE=""
-OUTPUT_LOCATION="${EVAL_LOCATION}${FAMILY_ID}"
+#OUTPUT_LOCATION="${EVAL_LOCATION}${FAMILY_ID}"
+OUTPUT_LOCATION="${CHECKPOINT_LOCATION}"
 
 # Find best epoch checkpoint to use for evaluation
 if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
@@ -136,7 +137,16 @@ if [[ $DRY_RUN == "true" ]]; then
   exit 0
 fi
 
+module load sox
 source activate inftrain
+
+HOME=/gpfsdswork/projects/rech/ank/ucv88ce/
+export PYTHONPATH=$HOME/repos/CPC_torch:$HOME/projects/MultilingualCPC/WavAugment:$PYTHONPATH
+
+if [ ! -f ${CHECKPOINT_LOCATION}/cpc_small/done.state ] && [ ! -f ${CHECKPOINT_LOCATION}/cpc_big/done.state ]; then
+    echo "=== The model hasn't finished training : no done.state in ${CHECKPOINT_LOCATION} . Not running the evaluation ==="
+    exit 1
+fi
 
 for lang in french english; do
   PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
@@ -144,5 +154,8 @@ for lang in french english; do
   PATH_OUT="$OUTPUT_LOCATION/${lang}"
   echo $PATH_OUT
   mkdir -p "$PATH_OUT"
-  srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+
+  if [ ! -f ${PATH_OUT}/ABX_scores.json ]; then
+      srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+  fi
 done

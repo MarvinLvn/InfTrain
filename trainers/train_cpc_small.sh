@@ -50,6 +50,12 @@ if [ -f ${PATH_CPT}/running.state ]; then
   echo "${PATH_CPT}/running.state found. Not running anything."
 fi;
 
+if [ -f ${PATH_CPT}/done.state ]; then
+    echo "${PATH_CPT}/done.state found. Not running anything."
+    exit 1
+fi;
+
+
 mkdir -p $PATH_CPT
 touch ${PATH_CPT}/running.state
 
@@ -62,10 +68,10 @@ export PYTHONPATH=$HOME/repos/CPC_torch:$HOME/projects/MultilingualCPC/WavAugmen
 
 
 srun python /gpfsdswork/projects/rech/ank/ucv88ce/repos/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
-                           --pathDB ${PATH_DB} --restart \
-                           --file_extension .wav --nLevelsGRU 2 --save_step 2 --multihead_rnn --restart \
+                           --pathDB ${PATH_DB} \
+                           --file_extension .wav --nLevelsGRU 2 --multihead_rnn \
                            --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
-                           --distributed --master_port $MASTER_PORT
+                           --distributed --master_port $MASTER_PORT --schedulerRamp 10
 
 
 rm ${PATH_CPT}/running.state

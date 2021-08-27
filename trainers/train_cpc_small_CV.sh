@@ -54,7 +54,8 @@ srun python /gpfsdswork/projects/rech/ank/ucv88ce/repos/CPC_torch/cpc/train.py -
                            --nEpoch ${NB_EPOCHS} --random_seed 42 \
                            --n_process_loader 1 \
                            --max_size_loaded ${max_size_loaded} \
-                           --distributed --master_port $MASTER_PORT
+                           --distributed --master_port $MASTER_PORT \
+                           --schedulerRamp 10
 
 
 rm ${PATH_CPT}/running.state

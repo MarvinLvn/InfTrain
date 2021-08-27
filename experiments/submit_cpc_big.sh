@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=cfs@gpu
+#SBATCH --account=ank@gpu
 #SBATCH --output=logs/cpc_big_%A_%a.out
 #SBATCH --nodes=8                     # nombre de noeud
 #SBATCH --ntasks-per-node=4
