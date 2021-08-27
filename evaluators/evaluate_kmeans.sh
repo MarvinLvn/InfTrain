@@ -91,16 +91,16 @@ CHECKPOINT_FILE=""
 OUTPUT_LOCATION=""
 
 # Find best epoch checkpoint to use for evaluation
-#if [ -d "${CHECKPOINT_LOCATION}/kmeans_50" ]; then
-if [ -d "${CHECKPOINT_LOCATION}/bad_folder" ]; then
+if [ -d "${CHECKPOINT_LOCATION}/kmeans_50" ]; then
+#if [ -d "${CHECKPOINT_LOCATION}/bad_folder" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/kmeans_50")"
   CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/kmeans_50/checkpoint_${BEST_EPOCH}.pt"
   OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/${BEST_EPOCH}"
 else
-#  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
-  echo "debugging: remove this !!!"
-  CHECKPOINT_FILE="/gpfsstore/rech/cfs/commun/zr2021_models/checkpoints/CPC-small-kmeans50/clustering_kmeans50/clustering_CPC_small_kmeans50.pt"
-  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/50"
+  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+#  echo "debugging: remove this !!!"
+#  CHECKPOINT_FILE="/gpfsstore/rech/cfs/commun/zr2021_models/checkpoints/CPC-small-kmeans50/clustering_kmeans50/clustering_CPC_small_kmeans50.pt"
+#  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/50"
 fi
 
 # Verify INPUTS
@@ -139,7 +139,7 @@ do
     echo "-----------------------------"
   else
     mkdir -p $PATH_OUT
-    srun python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE --debug
+    srun python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE
   fi
 done
 
