@@ -5,6 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
+#SBATCH --hint=nomultithread          # hyperthreading desactive
 #SBATCH --array=0-240%60
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 
