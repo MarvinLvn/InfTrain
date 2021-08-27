@@ -8,8 +8,8 @@
 ## Usage: ./evaluate_lm_semantic.sh PATH/TO/FAMILY_ID
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/semantic
-## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
-## 3) Compute sBLIMP (semantic score)
+## 2) Compute representations of the language model (scripts/build_BERT_features.py or scripts/build_LSTM_features.py depending on the model)
+## 3) Compute sSIMI (semantic score)
 ##
 ## Example:
 ##
@@ -122,22 +122,40 @@ do
 done
 
 
-# -- Compute pseudo-probabilities (bert or lstm) depending on the model
+# -- Compute representations of the language model (bert or lstm) depending on the model
+
+python scripts/build_BERT_features.py \
+    ../quantized/sSIMI/dev/quantized_outputs.txt \
+    ../features/BERT/layer4/sSIMI/dev/ \
+    checkpoints/CPC-big-kmeans50-BERT/BERT/BERT_CPC_big_kmeans50.pt \
+    --hidden_level 4
+
+mkdir -p $OUTPUT_LOCATION/features/semantic/sSIMI/{'dev','test'}
 
 if [ "$DEVICE" == "cpu" ] ; then
   ARGUMENTS="--cpu"
-elif [ "$MODEL" == "LSTM" ] ; then
-  ARGUMENTS="--batchSize=64"
 fi;
 
 for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features/semantic/${item}/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features/semantic/$item.txt"
-  bert_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}"
+  output="$OUTPUT_LOCATION/features/semantic/sSIMI/${item}"
+  lm_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+  python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}"
 done
 
+# move representations in the rights repositories for zerospeech2021-evaluate
+
+tail -n +2 "${ZEROSPEECH_DATASET}/semantic/dev/gold.csv" > $OUTPUT_LOCATION/features/temp.txt
+
+for item in ${KIND[*]}
+do
+  mkdir -p $OUTPUT_LOCATION/features/semantic/${item}/{'librispeech','synthetic'}
+  while IFS=, read -r f1 f2 f3 f4
+  do
+    mv "${OUTPUT_LOCATION}/features/semantic/sSIMI/${item}/${f2}.txt" "${OUTPUT_LOCATION}/features/semantic/dev/${f1}/${f2}.txt"
+  done < "$OUTPUT_LOCATION/features/temp.txt"
+done
 
 
 # Compute SWUGGY
