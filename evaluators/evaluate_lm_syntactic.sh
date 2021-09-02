@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID
+## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID [--cpu]
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/syntactic
 ## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
@@ -13,7 +13,7 @@
 ##
 ## Example:
 ##
-## ./evaluate_lm_syntactic.sh path/to/family_id
+## ./evaluate_lm_syntactic.sh path/to/family_id [--cpu]
 ##
 ## Parameters:
 ##
@@ -112,37 +112,44 @@ fi
 
 # -- Extract quantized units on zerospeech20201/syntactic
 
-mkdir -p $OUTPUT_LOCATION/features/syntactic/{'dev','test'}
+mkdir -p $OUTPUT_LOCATION/features_syn/syntactic/{'dev','test'}
 
 for item in ${KIND[*]}
 do
   datafiles="${ZEROSPEECH_DATASET}/syntactic/${item}"
-  output="${OUTPUT_LOCATION}/features/syntactic/${item}"
+  output="${OUTPUT_LOCATION}/features_syn/syntactic/${item}"
   python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
 done
 
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
+ARGUMENTS=""
 if [ "$DEVICE" == "cpu" ] ; then
   ARGUMENTS="--cpu"
 elif [ "$MODEL" == "LSTM" ] ; then
   ARGUMENTS="--batchSize=64"
+else
+  ARGUMENTS="None"
 fi;
 
 for item in ${KIND[*]}
 do
-  quantized="$OUTPUT_LOCATION/features/syntactic/${item}/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features/syntactic/$item.txt"
-  bert_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}"
+  quantized="$OUTPUT_LOCATION/features_syn/syntactic/${item}/quantized_outputs.txt"
+  output="$OUTPUT_LOCATION/features_syn/syntactic/$item.txt"
+  lm_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+  if [ "$ARGUMENTS" == "None" ] ; then
+    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
+  else
+    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}" "${ARGUMENTS}"
+  fi
 done
 
 
-# Compute SWUGGY
+# Compute SBLIMP
 # -- Prepare for evaluation
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
+FEATURES_LOCATION="${OUTPUT_LOCATION}/features_syn"
 # meta.yaml (required by zerospeech2021-evaluate)
 cat <<EOF > $FEATURES_LOCATION/meta.yaml
 author: infantSim Train Eval
@@ -171,4 +178,4 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/sblimp" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # cleanup
-rm -r $OUTPUT_LOCATION/features
+rm -r $OUTPUT_LOCATION/features_syn
