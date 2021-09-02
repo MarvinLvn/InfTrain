@@ -99,38 +99,47 @@ fi
 
 # check that script exists
 [ ! -f "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" ] && die "Quantize audio was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/build_1hot_features.py" ] && die "Build 1-hot features was not found in ${BASELINE_SCRIPTS}/scripts"
 [ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_BERT.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}/scripts"
 [ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_LSTM.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}/scripts"
 
 
 # -- Extract quantized units on zerospeech20201/lexical
 
-mkdir -p $OUTPUT_LOCATION/features/lexical/{'dev','test'}
+mkdir -p $OUTPUT_LOCATION/features_lex/lexical/{'dev','test'}
 
 for item in ${KIND[*]}
 do
   datafiles="${ZEROSPEECH_DATASET}/lexical/$item"
-  output="${OUTPUT_LOCATION}/features/lexical/$item"
+  output="${OUTPUT_LOCATION}/features_lex/lexical/$item"
   python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
 done
 
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
+if [ "$DEVICE" == "cpu" ] ; then
+  ARGUMENTS="--cpu"
+else
+  ARGUMENTS="None"
+fi;
+
 for item in ${KIND[*]}
 do
-  quantized="$OUTPUT_LOCATION/features/lexical/$item/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features/lexical/$item.txt"
+  quantized="$OUTPUT_LOCATION/features_lex/lexical/$item/quantized_outputs.txt"
+  output="$OUTPUT_LOCATION/features_lex/lexical/$item.txt"
   lm_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
+  if [ "$ARGUMENTS" == "None" ] ; then
+    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
+  else
+    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}" "${ARGUMENTS}"
+  fi
 done
 
 
 # Compute SWUGGY
 # -- Prepare for evaluation
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
+FEATURES_LOCATION="${OUTPUT_LOCATION}/features_lex"
 # meta.yaml (required by zerospeech2021-evaluate)
 cat <<EOF > $FEATURES_LOCATION/meta.yaml
 author: infantSim Train Eval
@@ -160,4 +169,4 @@ zerospeech2021-evaluate --no-phonetic --no-syntactic --no-semantic --njobs $NB_J
 
 
 # cleanup
-rm -r $OUTPUT_LOCATION/features
+rm -r $OUTPUT_LOCATION/features_lex
