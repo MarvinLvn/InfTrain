@@ -70,6 +70,7 @@ BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../external_code/zerospeech2021_baseline}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 KIND=('dev')
+CORPORA=('librispeech' 'synthetic')
 
 FAMILY_ID=$(echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")")
 
@@ -116,19 +117,17 @@ mkdir -p $OUTPUT_LOCATION/features/semantic/{'dev','test'}
 
 for item in ${KIND[*]}
 do
-  datafiles="${ZEROSPEECH_DATASET}/semantic/${item}"
-  output="${OUTPUT_LOCATION}/features/semantic/${item}"
-  python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
+  for corpus in ${CORPORA[*]}
+  do
+    datafiles="${ZEROSPEECH_DATASET}/semantic/${item}"
+    dataseq="${ZEROSPEECH_DATASET}/semantic/${item}/${corpus}"
+    output="${OUTPUT_LOCATION}/features/semantic/${item}/${corpus}"
+    python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT --pathSeq $dataseq
+  done
 done
 
 
 # -- Compute representations of the language model (bert or lstm) depending on the model
-
-python scripts/build_BERT_features.py \
-    ../quantized/sSIMI/dev/quantized_outputs.txt \
-    ../features/BERT/layer4/sSIMI/dev/ \
-    checkpoints/CPC-big-kmeans50-BERT/BERT/BERT_CPC_big_kmeans50.pt \
-    --hidden_level 4
 
 mkdir -p $OUTPUT_LOCATION/features/semantic/sSIMI/{'dev','test'}
 
@@ -138,27 +137,17 @@ fi;
 
 for item in ${KIND[*]}
 do
-  quantized="$OUTPUT_LOCATION/features/semantic/${item}/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features/semantic/sSIMI/${item}"
-  lm_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}"
-done
-
-# move representations in the rights repositories for zerospeech2021-evaluate
-
-tail -n +2 "${ZEROSPEECH_DATASET}/semantic/dev/gold.csv" > $OUTPUT_LOCATION/features/temp.txt
-
-for item in ${KIND[*]}
-do
-  mkdir -p $OUTPUT_LOCATION/features/semantic/${item}/{'librispeech','synthetic'}
-  while IFS=, read -r f1 f2 f3 f4
+  for corpus in ${CORPORA[*]}
   do
-    mv "${OUTPUT_LOCATION}/features/semantic/sSIMI/${item}/${f2}.txt" "${OUTPUT_LOCATION}/features/semantic/dev/${f1}/${f2}.txt"
-  done < "$OUTPUT_LOCATION/features/temp.txt"
+    quantized="$OUTPUT_LOCATION/features/semantic/${item}/${corpus}/quantized_outputs.txt"
+    output="$OUTPUT_LOCATION/features/semantic/${item}/${corpus}"
+    lm_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+    python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}"
+  done
 done
 
 
-# Compute SWUGGY
+# Compute SSIMI
 # -- Prepare for evaluation
 
 FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
@@ -190,4 +179,4 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-syntactic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/ssimi" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # cleanup
-rm -r $OUTPUT_LOCATION/features
+# rm -r $OUTPUT_LOCATION/features
