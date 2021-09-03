@@ -20,6 +20,6 @@ module load sox
 
 ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/experiments/experiments_txt/cpc_small_experiments.txt)
 cd ..
-./evaluators/evaluate_cpc.sh ${ARGS}
+./evaluators/evaluate_cpc_filter.sh ${ARGS}
 
 

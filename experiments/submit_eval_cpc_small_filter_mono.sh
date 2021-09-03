@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --account=ank@gpu
-#SBATCH --output=logs/eval_cpc_small_gpu_%A_%a.out
+#SBATCH --output=logs/eval_cpc_small_filter-mono_%A_%a.out
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
-#SBATCH --array=0-240%60
+#SBATCH --array=0-260%60
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 
 
@@ -18,8 +18,8 @@
 source activate inftrain
 module load sox
 
-ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/experiments/experiments_txt/cpc_small_experiments.txt)
+ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/experiments/experiments_txt_mono/cpc_small_experiments.txt)
 cd ..
-./evaluators/evaluate_cpc.sh ${ARGS}
+./evaluators/evaluate_cpc_filter_mono.sh ${ARGS}
 
 

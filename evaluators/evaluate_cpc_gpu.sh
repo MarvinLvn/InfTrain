@@ -151,15 +151,13 @@ if [ ! -f ${CHECKPOINT_LOCATION}/cpc_small/done.state ] && [ ! -f ${CHECKPOINT_L
 fi
 
 for lang in french english; do
-    for s in "${seconds}"; do
-        PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
-        LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
-        PATH_OUT="$OUTPUT_LOCATION/${lang}"
-        echo $PATH_OUT
-        mkdir -p "$PATH_OUT"
+  PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
+  LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
+  PATH_OUT="$OUTPUT_LOCATION/${lang}"
+  echo $PATH_OUT
+  mkdir -p "$PATH_OUT"
 
-        if [ ! -f ${PATH_OUT}/ABX_scores.json ]; then
-            srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
-        fi
-    done
+  if [ ! -f ${PATH_OUT}/ABX_scores.json ]; then
+      srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+  fi
 done

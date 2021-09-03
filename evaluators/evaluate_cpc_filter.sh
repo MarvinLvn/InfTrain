@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --output=experiments/logs/eval_cpc_%j.out
+#SBATCH --output=experiments/logs/eval_cpc_filter%j.out
 #SBATCH --hint=nomultithread
 
 ##
@@ -115,7 +115,7 @@ fi
 [ ! -d $PATH_TO_FAMILY ] && die "Given family was not found: $PATH_TO_FAMILY"
 
 # we test only on 1s duration files
-seconds="1s"
+seconds="1s_easyfilter"
 
 #--debug print values && exit
 if [[ $DRY_RUN == "true" ]]; then
@@ -133,7 +133,7 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "for langs in (french, english) using 1s files"
   for lang in french english; do
     PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
-    PATH_OUT="$OUTPUT_LOCATION/${lang}"
+    PATH_OUT="$OUTPUT_LOCATION/${seconds}/${lang}"
     echo "==> python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT"
   done
   exit 0
@@ -150,11 +150,11 @@ if [ ! -f ${CHECKPOINT_LOCATION}/cpc_small/done.state ] && [ ! -f ${CHECKPOINT_L
     exit 1
 fi
 
-for lang in french english; do
+for lang in french; do
     for s in "${seconds}"; do
         PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${seconds}/${seconds}.item"
         LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}/1s"
-        PATH_OUT="$OUTPUT_LOCATION/${lang}"
+        PATH_OUT="$OUTPUT_LOCATION/${seconds}/${lang}"
         echo $PATH_OUT
         mkdir -p "$PATH_OUT"
 
