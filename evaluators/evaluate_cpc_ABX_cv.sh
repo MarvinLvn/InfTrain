@@ -7,7 +7,7 @@
 ##
 ## Usage: ./evaluate_cpc.sh /path/to/duration/family_id
 ##
-## 1) Extract CPC representations on zerospeech2017/{french, english}
+## 1) Extract CPC representations on zerospeech2017/{fr, en}
 ## 2) Compute ABX error rate
 ## This is done using abx evaluation in CPC_torch package
 ##
@@ -72,7 +72,7 @@ FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/cv21_ABX/raw_dataset}"
 ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py}"
 BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py}"
-FILE_EXT="${FILE_EXTENSION:-.wav}"
+FILE_EXT="${FILE_EXTENSION:-.mp3}"
 GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 
@@ -122,8 +122,8 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "gru_level: $GRU_LEVEL"
   echo "nb-jobs: $NB_JOBS"
   echo "python $(which python)"
-  echo "for langs in (french, english) using 1s files"
-  for lang in french english; do
+  echo "for langs in (fr, en) using 1s files"
+  for lang in fr en; do
     PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${lang}.item"
     PATH_OUT="$OUTPUT_LOCATION/${lang}"
     echo "==> python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE $ZEROSPEECH_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT"
@@ -131,7 +131,7 @@ if [[ $DRY_RUN == "true" ]]; then
   exit 0
 fi
 
-for lang in french english; do
+for lang in fr en; do
   PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${lang}.item"
   LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}"
   PATH_OUT="$OUTPUT_LOCATION/${lang}"
