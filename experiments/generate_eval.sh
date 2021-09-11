@@ -10,8 +10,8 @@ LANGUAGES=(EN FR)
 rm -f $PARAMS_FILE
 mkdir -p last_experiments_txt
 mkdir -p experiments_txt
-mv -f experiments_txt/{cpc_small,cpc_big,kmeans,lstm,bert_large}_eval_experiments.txt last_eval_experiments_txt
-touch experiments_txt/{cpc_small,cpc_big,kmeans,lstm,bert_large}_eval_experiments.txt
+mv -f experiments_txt/{cpc,kmeans,lstm,bert_large}_eval_experiments.txt last_experiments_txt
+touch experiments_txt/{cpc,kmeans,lstm,bert_large}_eval_experiments.txt
 
 for (( POWER=6 ; POWER >= 0 ; POWER-- )); do                                # loop through size
   SIZE=$((50*2**$((6-POWER))))
@@ -20,7 +20,7 @@ for (( POWER=6 ; POWER >= 0 ; POWER-- )); do                                # lo
     for LANGUAGE in ${LANGUAGES[*]}; do
       MODEL_PATH=${ALL_CCFRSCRATCH}/InfTrain_models/${LANGUAGE}/${SIZE}h/${SHARE_NB}
       PATH_DB=${ALL_CCFRSCRATCH}/families/${LANGUAGE}/${SIZE}h/${SHARE_NB}
-      ./which_model.sh $MODEL_PATH $PATH_DB
+      ./which_eval.sh $MODEL_PATH $PATH_DB
     done;
   done;
 done;

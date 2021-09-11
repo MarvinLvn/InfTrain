@@ -1,9 +1,10 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --partition=prepost
+#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
+
 ##
 ## Usage: ./evaluate_cpc.sh /path/to/duration/family_id
 ##

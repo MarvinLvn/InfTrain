@@ -64,7 +64,7 @@ srun python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/train.py --path
                            --pathDB ${PATH_DB} \
                            --file_extension .wav --nLevelsGRU 2 --save_step 2 --multihead_rnn \
                            --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
-                           --distributed --master_port $MASTER_PORT --schedulerRamp 10
+                           --distributed --max_size_loaded 200000000 --master_port $MASTER_PORT --schedulerRamp 10
 
 
 rm ${PATH_CPT}/running.state
