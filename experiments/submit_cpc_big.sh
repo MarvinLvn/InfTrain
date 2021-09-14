@@ -6,7 +6,6 @@
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-#SBATCH --exclusive
 #SBATCH --array=0-14%14
 
 # This script submits CPC big training experiments.
