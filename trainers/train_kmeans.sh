@@ -6,13 +6,9 @@
 #SBATCH --cpus-per-task=10          # nombre de cpus par GPU : rule of thumb n_cpu = 10*n_gpus
 #SBATCH --hint=nomultithread
 
-# Need to decide if we train on a subset : talk with Emmanuel
-echo "This script hasn't been tested. Needs to be finished and thoroughly checked"
-exit
-
 PATH_DB=$1
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 1 ]; then
   echo "Illegal number of parameters. Please respect :"
   echo "./train_cpc_kmeans.sh /path/to/database/containing/wav/files"
   echo "Example :"
@@ -27,8 +23,11 @@ LANGUAGE=$(basename $(dirname $(dirname $PATH_DB)))
 CPC_NAME=cpc_small
 NB_EPOCHS=300
 
-PATH_CPT=/checkpoint/marvinlvn/InfTrain/InfTrain_models/${LANGUAGE}/${SIZE}/${SHARE}/kmeans
-PATH_CPC=/checkpoint/marvinlvn/InfTrain/InfTrain_models/${LANGUAGE}/${SIZE}/${SHARE}/cpc
+PATH_CPT=${ALL_CCFRSCRATCH}/InfTrain_models/${LANGUAGE}/${SIZE}/${SHARE}/kmeans50
+PATH_CPC=${ALL_CCFRSCRATCH}/InfTrain_models/${LANGUAGE}/${SIZE}/${SHARE}/${CPC_NAME}
+BEST_EPOCH=$(python /gpfsscratch/rech/cfs/uow84uh/InfTrain/utils/best_val_epoch.py --model_path ${PATH_CPC} | grep -oP "(?<=is : )([0-9]+)")
+PATH_CPC=${PATH_CPC}/checkpoint_${BEST_EPOCH}.pt
+
 LEVEL_GRU=2
 
 if [ -f ${PATH_CPT}/running.state ]; then
@@ -36,13 +35,13 @@ if [ -f ${PATH_CPT}/running.state ]; then
   exit
 fi;
 
-mkdir -p $PATH_CPT
-touch ${PATH_CPT}/running.state
+
+#mkdir -p ${PATH_CPT}
+#touch ${PATH_CPT}/running.state
 echo "Start training $PATH_CPT"
 
-python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/criterion/clustering/clustering_script.py --recursionLevel 2 --extension wav \
-        --nClusters 50 --MAX_ITER $NB_EPOCHS --save --batchSizeGPU 200 --level_gru ${LEVEL_GRU} --perIterSize 1406 --save \
-        ${PATH_CPC} ${PATH_OUTPUT_CHECKPOINT}
+python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/clustering/clustering_script.py ${PATH_CPC} ${PATH_CPT} ${PATH_DB} --recursionLevel 2 --extension wav \
+        --nClusters 50 --MAX_ITER $NB_EPOCHS --save --batchSizeGPU 200 --level_gru ${LEVEL_GRU} --perIterSize 1406 --save-last 5
 
 rm ${PATH_CPT}/running.state
 if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then
