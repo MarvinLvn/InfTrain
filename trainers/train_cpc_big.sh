@@ -30,18 +30,24 @@ PATH_CPT=${ALL_CCFRSCRATCH}/InfTrain_models/${LANGUAGE}/${SIZE}/${SHARE}/cpc_big
 # This can be changed if we observe that models take too much time to train.
 # However, if one decide to lower the number of epochs,
 # one should check that models are indeed converging
-if [ "$SIZE" == "400h" ]; then
-  NB_EPOCHS=150
-elif [ "$SIZE" == "800h" ]; then
+if [ "$SIZE" == "50h" ]; then
+  NB_EPOCHS=200
+elif [ "$SIZE" == "100h" ]; then
+  # 100 epochs for a 100h training set seems fine to me
   NB_EPOCHS=100
-elif [ "$SIZE" == "1600h" ]; then
+elif [ "$SIZE" == "200h" ]; then
   NB_EPOCHS=80
-elif [ "$SIZE" == "3200h" ]; then
-  # CPC big has been trained on 32 GPUS for 30 epochs
+elif [ "$SIZE" == "400h" ]; then
+  NB_EPOCHS=60;
+elif [ "$SIZE" == "800h" ]; then
   NB_EPOCHS=50;
+elif [ "$SIZE" == "1600h" ]; then
+  NB_EPOCHS=40;
+elif [ "$SIZE" == "3200h" ]; then
+  NB_EPOCHS=30;
 else
   echo "Not possible to deduce the number of epochs from the size of the training set."
-  echo "You should check that you haven't called train_cpc_big.sh with a training set whose size is lower or equal than 200h"
+  echo "You should check that you haven't called train_cpc_small.sh with a training set whose size is greater or equal than 800h"
   exit
 fi;
 

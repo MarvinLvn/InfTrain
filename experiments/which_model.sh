@@ -18,12 +18,10 @@ SIZE=${SIZE/h/}
 CPC="cpc_small"
 LM="lstm"
 KMEANS="kmeans_50"
-
-# We changed our plan : we only want to train the small arch. for now
-#if [ $SIZE -ge 800 ]; then
-#  CPC="cpc_big"
-#  LM="bert_large"
-#fi;
+if [ $SIZE -ge 800 ]; then
+  CPC="cpc_big"
+  LM="bert_large"
+fi;
 
 # Train CPC
 if [ ! -f ${MODEL_PATH}/${CPC}/done.state ]; then
