@@ -26,7 +26,7 @@
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## KIND                          the partition of the zerospeech dataset on which the evaluation is done (default: dev test)
-## OUTPUT_LOCATION               the location to write result files (default: family_id/cpc_{small, big})
+## OUTPUT_LOCATION               the location to write features files (default: $JOBSCRATCH on Jean-Zay)
 ##
 ## More info:
 ## https://github.com/bootphon/zerospeech2021_baseline
@@ -82,9 +82,9 @@ else
   MODEL="BERT"
 fi
 
-OUTPUT_LOCATION="$FAMILY_ID/$CPC"
+OUTPUT_LOCATION="$JOBSCRATCH/$CPC"
 
-if [ -d "${OUTPUT_LOCATION}/clustering_kmeans50" ]; then
+if [ -d "$FAMILY_ID/$CPC/clustering_kmeans50" ]; then
   CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
 else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
@@ -127,7 +127,7 @@ for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features_lex/lexical/$item/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features_lex/lexical/$item.txt"
-  lm_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+  lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
   if [ "$ARGUMENTS" == "None" ] ; then
     python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
   else
@@ -167,6 +167,6 @@ fi;
 
 zerospeech2021-evaluate --no-phonetic --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/swuggy" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
-
-# cleanup
-rm -r $OUTPUT_LOCATION/features_lex
+# copy the score on $SCRATCH
+mkdir -p $FAMILY_ID/$CPC/scores/swuggy
+cp -r $OUTPUT_LOCATION/scores/swuggy $FAMILY_ID/$CPC/scores
