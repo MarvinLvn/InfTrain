@@ -5,15 +5,15 @@
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-## Usage: ./evaluate_lm_semantic.sh PATH/TO/FAMILY_ID
+## Usage: ./evaluate_lm_semantic.sh PATH/TO/FAMILY_ID [--cpu]
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/semantic
-## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
-## 3) Compute sBLIMP (semantic score)
+## 2) Compute representations of the language model (scripts/build_BERT_features.py or scripts/build_LSTM_features.py depending on the model)
+## 3) Compute sSIMI (semantic score)
 ##
 ## Example:
 ##
-## ./evaluate_lm_semantic.sh path/to/family_id
+## ./evaluate_lm_semantic.sh path/to/family_id [--cpu]
 ##
 ## Parameters:
 ##
@@ -26,7 +26,8 @@
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## KIND                          the partition of the zerospeech dataset on which the evaluation is done (default: dev test)
-## OUTPUT_LOCATION               the location to write result files (default: family_id/cpc_{small, big})
+## OUTPUT_LOCATION               the location to write features files (default: $JOBSCRATCH on Jean-Zay)
+## CORPORA                       the corpus of zerospeech2021/semantic (default: synthetic librispeech)
 ##
 ## More info:
 ## https://github.com/bootphon/zerospeech2021_baseline
@@ -70,6 +71,7 @@ BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../external_code/zerospeech2021_baseline}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 KIND=('dev')
+CORPORA=('librispeech' 'synthetic')
 
 FAMILY_ID=$(echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")")
 
@@ -82,9 +84,9 @@ else
   MODEL="BERT"
 fi
 
-OUTPUT_LOCATION="$FAMILY_ID/$CPC"
+OUTPUT_LOCATION="$JOBSCRATCH/$CPC"
 
-if [ -d "${OUTPUT_LOCATION}/clustering_kmeans50" ]; then
+if [ -d "$FAMILY_ID/$CPC/clustering_kmeans50" ]; then
   CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
 else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
@@ -107,43 +109,52 @@ fi
 
 # check that script exists
 [ ! -f "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" ] && die "Quantize audio was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_BERT.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_LSTM.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -f "${BASELINE_SCRIPTS}/scripts/build_LSTM_features.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -f "${BASELINE_SCRIPTS}/scripts/build_BERT_features.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}/scripts"
 
 # -- Extract quantized units on zerospeech20201/semantic
 
-mkdir -p $OUTPUT_LOCATION/features/semantic/{'dev','test'}
+mkdir -p $OUTPUT_LOCATION/features_sem/semantic/{'dev','test'}
 
 for item in ${KIND[*]}
 do
-  datafiles="${ZEROSPEECH_DATASET}/semantic/${item}"
-  output="${OUTPUT_LOCATION}/features/semantic/${item}"
-  python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
+  for corpus in ${CORPORA[*]}
+  do
+    datafiles="${ZEROSPEECH_DATASET}/semantic/${item}/${corpus}"
+    output="${OUTPUT_LOCATION}/features_sem/semantic/${item}/${corpus}"
+    python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
+  done
 done
 
 
-# -- Compute pseudo-probabilities (bert or lstm) depending on the model
+# -- Compute representations of the language model (bert or lstm) depending on the model
 
 if [ "$DEVICE" == "cpu" ] ; then
   ARGUMENTS="--cpu"
-elif [ "$MODEL" == "LSTM" ] ; then
-  ARGUMENTS="--batchSize=64"
+else
+  ARGUMENTS="None"
 fi;
 
 for item in ${KIND[*]}
 do
-  quantized="$OUTPUT_LOCATION/features/semantic/${item}/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features/semantic/$item.txt"
-  bert_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}"
+  for corpus in ${CORPORA[*]}
+  do
+    quantized="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}/quantized_outputs.txt"
+    output="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}"
+    lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+    if [ $ARGUMENTS == "None" ] ; then
+      python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}"
+    else
+      python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}" "$ARGUMENTS"
+    fi
+  done
 done
 
 
-
-# Compute SWUGGY
+# Compute SSIMI
 # -- Prepare for evaluation
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
+FEATURES_LOCATION="${OUTPUT_LOCATION}/features_sem"
 # meta.yaml (required by zerospeech2021-evaluate)
 cat <<EOF > $FEATURES_LOCATION/meta.yaml
 author: infantSim Train Eval
@@ -171,5 +182,8 @@ fi;
 
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-syntactic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/ssimi" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
-# cleanup
-rm -r $OUTPUT_LOCATION/features
+# copy the score on $SCRATCH
+mkdir -p $FAMILY_ID/$CPC/scores/ssimi
+cp -r $OUTPUT_LOCATION/scores/ssimi $FAMILY_ID/$CPC/scores
+
+

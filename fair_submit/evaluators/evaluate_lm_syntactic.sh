@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID [--cpu]
+## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/syntactic
 ## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
@@ -13,7 +13,7 @@
 ##
 ## Example:
 ##
-## ./evaluate_lm_syntactic.sh path/to/family_id [--cpu]
+## ./evaluate_lm_syntactic.sh path/to/family_id
 ##
 ## Parameters:
 ##
@@ -26,7 +26,7 @@
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## KIND                          the partition of the zerospeech dataset on which the evaluation is done (default: dev test)
-## OUTPUT_LOCATION               the location to write features files (default: $JOBSCRATCH on Jean-Zay)
+## OUTPUT_LOCATION               the location to write result files (default: family_id/cpc_{small, big})
 ##
 ## More info:
 ## https://github.com/bootphon/zerospeech2021_baseline
@@ -82,9 +82,9 @@ else
   MODEL="BERT"
 fi
 
-OUTPUT_LOCATION="$JOBSCRATCH/$CPC"
+OUTPUT_LOCATION="$FAMILY_ID/$CPC"
 
-if [ -d "$FAMILY_ID/$CPC/clustering_kmeans50" ]; then
+if [ -d "${OUTPUT_LOCATION}/clustering_kmeans50" ]; then
   CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
 else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
@@ -112,44 +112,37 @@ fi
 
 # -- Extract quantized units on zerospeech20201/syntactic
 
-mkdir -p $OUTPUT_LOCATION/features_syn/syntactic/{'dev','test'}
+mkdir -p $OUTPUT_LOCATION/features/syntactic/{'dev','test'}
 
 for item in ${KIND[*]}
 do
   datafiles="${ZEROSPEECH_DATASET}/syntactic/${item}"
-  output="${OUTPUT_LOCATION}/features_syn/syntactic/${item}"
+  output="${OUTPUT_LOCATION}/features/syntactic/${item}"
   python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
 done
 
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
-ARGUMENTS=""
 if [ "$DEVICE" == "cpu" ] ; then
   ARGUMENTS="--cpu"
 elif [ "$MODEL" == "LSTM" ] ; then
   ARGUMENTS="--batchSize=64"
-else
-  ARGUMENTS="None"
 fi;
 
 for item in ${KIND[*]}
 do
-  quantized="$OUTPUT_LOCATION/features_syn/syntactic/${item}/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features_syn/syntactic/$item.txt"
-  lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  if [ "$ARGUMENTS" == "None" ] ; then
-    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
-  else
-    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}" "${ARGUMENTS}"
-  fi
+  quantized="$OUTPUT_LOCATION/features/syntactic/${item}/quantized_outputs.txt"
+  output="$OUTPUT_LOCATION/features/syntactic/$item.txt"
+  bert_checkpoint="$OUTPUT_LOCATION/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}" "${ARGUMENTS}"
 done
 
 
-# Compute SBLIMP
+# Compute SWUGGY
 # -- Prepare for evaluation
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features_syn"
+FEATURES_LOCATION="${OUTPUT_LOCATION}/features"
 # meta.yaml (required by zerospeech2021-evaluate)
 cat <<EOF > $FEATURES_LOCATION/meta.yaml
 author: infantSim Train Eval
@@ -177,7 +170,5 @@ fi;
 
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/sblimp" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
-# copy the score on $SCRATCH
-mkdir -p $FAMILY_ID/$CPC/scores/sblimp
-cp -r $OUTPUT_LOCATION/scores/sblimp $FAMILY_ID/$CPC/scores
-
+# cleanup
+rm -r $OUTPUT_LOCATION/features

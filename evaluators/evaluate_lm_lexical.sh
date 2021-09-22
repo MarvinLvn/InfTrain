@@ -1,34 +1,32 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --partition=prepost           # access to octo-gpus machines
+##SBATCH --partition=prepost           # access to octo-gpus machines
 #SBATCH --nodes=1                     # nombre de noeud
-##SBATCH --gres=gpu:8                  # nombre de GPUs par nœud
+#SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-#SBATCH --exclusive
-## Usage: ./evaluate_lm.sh CLUSTERING_CHECKPOINT_FILE
+## Usage: ./evaluate_lm_lexical.sh PATH/TO/FAMILY_ID
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/lexical
-## 2) One-hot quantized units (scripts/build_1hot_features.py) 
-## 3) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
-## 4) Compute sWUGGY (lexical score)
+## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
+## 3) Compute sWUGGY (lexical score)
 ##
 ## Example:
 ##
-## ./evaluate_cpc.sh path/to/family_id
+## ./evaluate_lm_lexical.sh path/to/family_id
 ##
 ## Parameters:
 ##
-##   CLUSTERING_CHECKPOINT_FILE  the path to the .pt file to use as the CPC model.
+##   PATH/TO/FAMILY              the path to the family id.
 ##
 ## ENVIRONMENT VARIABLES
 ##
-## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /scratch1/projects/zerospeech/2021/zerospeech2021_dataset)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
 ## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../external_code/zerospeech2021_baseline)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## KIND                          the partition of the zerospeech dataset on which the evaluation is done (default: dev test)
-## OUTPUT_LOCATION               the location to write result files
+## OUTPUT_LOCATION               the location to write features files (default: $JOBSCRATCH on Jean-Zay)
 ##
 ## More info:
 ## https://github.com/bootphon/zerospeech2021_baseline
@@ -67,36 +65,30 @@ function die() {
 [ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
 [ $# -lt 1 ] && usage
 
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/scratch1/projects/zerospeech/2021/zerospeech2021_dataset}"
-BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-$(dirname "$here")/external_code/zerospeech2021_baseline}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
+BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../external_code/zerospeech2021_baseline}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
-KIND={'dev' 'test'}
+KIND=('dev')
 
-CLUSTERING_CHECKPOINT_FILE=$1
-# OUTPUT_LOCATION=$2
-shift; shift;
+FAMILY_ID=$(echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")")
 
-# echo variable to check
-echo $ZEROSPEECH_DATASET
-echo $BASELINE_SCRIPTS
-echo $FILE_EXT
-echo $NB_JOBS
-echo $KIND
-echo $CLUSTERING_CHECKPOINT_FILE
 
-duration=$(echo ${OUTPUT_LOCATION} | cut -d'/' -f8 | sed "s/\h//g")
-
-if [ $duration -lt 401 ]
-then
+if [ -d "${FAMILY_ID}/cpc_small" ]; then
+  CPC="cpc_small"
   MODEL="LSTM"
 else
+  CPC="cpc_big"
   MODEL="BERT"
 fi
 
-echo $MODEL
+OUTPUT_LOCATION="$JOBSCRATCH/$CPC"
 
-exit 0
+if [ -d "$FAMILY_ID/$CPC/clustering_kmeans50" ]; then
+  CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
+else
+  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+fi
 
 
 # Verify INPUTS
@@ -104,72 +96,52 @@ exit 0
 [ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS not found: $BASELINE_SCRIPTS"
 [ ! -f $CLUSTERING_CHECKPOINT_FILE ] && [ "${CLUSTERING_CHECKPOINT_FILE: -3}" == ".pt" ] && die "Checkpoint file given does not exist or is not a valid .pt file: $CPC_CHECKPOINT_FILE"
 
-mkdir -p $OUTPUT_LOCATION/features/phonetic/{'dev-clean','dev-other','test-clean','test-other'}
 
 # check that script exists
-[ ! -f "${BASELINE_SCRIPTS}/scripts/quantize_audio.py.py" ] && die "Quantize audio was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/build_1hot_features.py.py" ] && die "Build 1-hot features was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_BERT.py.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_LSTM.py.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -f "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" ] && die "Quantize audio was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_BERT.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_LSTM.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}/scripts"
 
 
 # -- Extract quantized units on zerospeech20201/lexical
 
-mkdir -p $OUTPUT_LOCATION/features/lexical/{'dev','test'}
+mkdir -p $OUTPUT_LOCATION/features_lex/lexical/{'dev','test'}
 
 for item in ${KIND[*]}
 do
-  datafiles="${ZEROSPEECH_DATASET}/lexical/${item}"
-  output="${OUTPUT_LOCATION}/features/lexical/${item}"
-  python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file-extension $FILE_EXT
+  datafiles="${ZEROSPEECH_DATASET}/lexical/$item"
+  output="${OUTPUT_LOCATION}/features_lex/lexical/$item"
+  python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
 done
 
-
-# -- Building 1-hot features
-
-mkdir -p $OUTPUT_LOCATION/features/one_hot/{'dev','test'}
-
-for item in ${KIND[*]}
-do
-  input="${OUTPUT_LOCATION}/features/lexical/${item}/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features/one_hot/${item}"
-  python "${BASELINE_SCRIPTS}/scripts/build_1hot_features.py" "${input}" "${output}"
-done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
-mkdir -p $OUTPUT_LOCATION/probabailities/lexical/{'dev','test'}
-
-
-# python compute_proba_{BERT,LSTM}.py pathQuantizedUnits pathOutputFile pathBERTCheckpoint
-# bert : > 400h
-# lstm : < 400h
-# 400h : both models TODO
-
-duration=$(echo ${OUTPUT_LOCATION} | cut -d'/' -f8 | sed "s/\h//g")
-
-if [ $duration -lt 401 ]
-then
-  MODEL="LSTM"
+if [ "$DEVICE" == "cpu" ] ; then
+  ARGUMENTS="--cpu"
 else
-  MODEL="BERT"
-fi
+  ARGUMENTS="None"
+fi;
 
 for item in ${KIND[*]}
 do
-  quantized="$OUTPUT_LOCATION/features/one_hot/${item}"
-  output="$OUTPUT_LOCATION/features/probabilities"
-  bert_checkpoint="" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${bert_checkpoint}"
+  quantized="$OUTPUT_LOCATION/features_lex/lexical/$item/quantized_outputs.txt"
+  output="$OUTPUT_LOCATION/features_lex/lexical/$item.txt"
+  lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
+  if [ "$ARGUMENTS" == "None" ] ; then
+    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
+  else
+    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}" "${ARGUMENTS}"
+  fi
 done
 
 
 # Compute SWUGGY
 # -- Prepare for evaluation
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features/probabilities"
+FEATURES_LOCATION="${OUTPUT_LOCATION}/features_lex"
 # meta.yaml (required by zerospeech2021-evaluate)
-cat <<EOF > $FEATURES_LOCATION
+cat <<EOF > $FEATURES_LOCATION/meta.yaml
 author: infantSim Train Eval
 affiliation: EHESS, ENS, PSL Research Univerity, CNRS and Inria
 description: >
@@ -189,10 +161,12 @@ parameters:
 EOF
 
 # required by zerospeech2021-evaluate to allow test evaluation
-export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
+if [[ ${KIND[*]} =~ (^|[[:space:]])"test"($|[[:space:]]) ]] ; then
+  export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
+fi;
 
 zerospeech2021-evaluate --no-phonetic --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/swuggy" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
-
-# cleanup
-# rm -r $OUTPUT_LOCATION/features
+# copy the score on $SCRATCH
+mkdir -p $FAMILY_ID/$CPC/scores/swuggy
+cp -r $OUTPUT_LOCATION/scores/swuggy $FAMILY_ID/$CPC/scores

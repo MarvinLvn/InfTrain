@@ -1,11 +1,12 @@
 #!/bin/bash
-#SBATCH --account=ank@gpu
+#SBATCH --account=cfs@gpu
 #SBATCH --output=logs/cpc_big_%A_%a.out
 #SBATCH --nodes=8                     # nombre de noeud
 #SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
+#SBATCH --exclusive
 #SBATCH --array=0-14%14
 
 # This script submits CPC big training experiments.
