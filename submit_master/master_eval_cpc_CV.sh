@@ -11,7 +11,7 @@ HOME=/gpfsdswork/projects/rech/ank/ucv88ce
 export PYTHONPATH=$HOME/repos/CPC_torch:$HOME/projects/MultilingualCPC/WavAugment:$PYTHONPATH
 
 #model=mono/mono_en
-model=mix/en-fr_B
+model=mix/en-fr_A+B
 
 BEST_EPOCH_PY=/gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/utils/best_val_epoch.py
 
@@ -23,6 +23,7 @@ for lang in french english; do
     if [ -f ${ZS17}/$lang/$s/${s}.item ]; then
         
         BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path experiments/checkpoints/cv/$model)"
+        echo "Best epoch is $BEST_EPOCH for $model"
         out=experiments/checkpoints/cv/$model/ABX/$BEST_EPOCH/$lang/${s}
         mkdir -p $out
         if [ ! -f $out/ABX_scores.json ]; then

@@ -34,43 +34,31 @@ if [ "$SIZE" == "50h" ]; then
   NB_EPOCHS=200
 elif [ "$SIZE" == "100h" ]; then
   # 100 epochs for a 100h training set seems fine to me
-    NB_EPOCHS=100
-    NB_EPOCHS=105
+  NB_EPOCHS=100
 elif [ "$SIZE" == "200h" ]; then
-    NB_EPOCHS=80
-    NB_EPOCHS=85
+  NB_EPOCHS=80
 elif [ "$SIZE" == "400h" ]; then
-    NB_EPOCHS=60;
-    NB_EPOCHS=65
+  NB_EPOCHS=60;
 elif [ "$SIZE" == "800h" ]; then
-    NB_EPOCHS=50;
-    NB_EPOCHS=55
-    
+  NB_EPOCHS=50;
 elif [ "$SIZE" == "1600h" ]; then
-    NB_EPOCHS=40;
-    NB_EPOCHS=45
+  NB_EPOCHS=40;
 elif [ "$SIZE" == "3200h" ]; then
-    NB_EPOCHS=30;
-    NB_EPOCHS=35
-elif [ "$SIZE" == "6400h" ]; then
-    NB_EPOCHS=20;
-    NB_EPOCHS=25
+  NB_EPOCHS=30;
 else
   echo "Not possible to deduce the number of epochs from the size of the training set."
   echo "You should check that you haven't called train_cpc_small.sh with a training set whose size is greater or equal than 800h"
   exit
 fi;
 
-# if [ -f ${PATH_CPT}/running.state ]; then
-#   echo "${PATH_CPT}/running.state found. Not running anything."
-# fi;
+if [ -f ${PATH_CPT}/running.state ]; then
+  echo "${PATH_CPT}/running.state found. Not running anything."
+fi;
 
 if [ -f ${PATH_CPT}/done.state ]; then
     echo "${PATH_CPT}/done.state found. Not running anything."
-    rm ${PATH_CPT}/running.state
-  exit 1 
+    exit 1
 fi;
-
 
 
 mkdir -p $PATH_CPT
@@ -79,15 +67,17 @@ touch ${PATH_CPT}/running.state
 echo "Start training $PATH_CPT"
 module load sox
 source activate inftrain
+
 HOME=/gpfsdswork/projects/rech/ank/ucv88ce/
 export PYTHONPATH=$HOME/repos/CPC_torch:$HOME/projects/MultilingualCPC/WavAugment:$PYTHONPATH
 
 
-srun python $HOME/repos/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
+srun python /gpfsdswork/projects/rech/ank/ucv88ce/repos/CPC_torch/cpc/train.py --pathCheckpoint ${PATH_CPT} \
                            --pathDB ${PATH_DB} \
                            --file_extension .wav --nLevelsGRU 2 --save_step 2 --multihead_rnn \
+
                            --nEpoch ${NB_EPOCHS} --random_seed 42 --n_process_loader 1 --save_step 5 \
-                           --distributed --master_port $MASTER_PORT --schedulerRamp 10 --max_size_loaded 200000000
+                           --distributed --master_port $MASTER_PORT --schedulerRamp 10
 
 
 rm ${PATH_CPT}/running.state
