@@ -117,22 +117,12 @@ done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
-if [ "$DEVICE" == "cpu" ] ; then
-  ARGUMENTS="--cpu"
-else
-  ARGUMENTS="None"
-fi;
-
 for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features_lex/lexical/$item/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features_lex/lexical/$item.txt"
   lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  if [ "$ARGUMENTS" == "None" ] ; then
-    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
-  else
-    python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}" "${ARGUMENTS}"
-  fi
+  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
 done
 
 

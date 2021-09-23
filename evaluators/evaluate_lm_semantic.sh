@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-## Usage: ./evaluate_lm_semantic.sh PATH/TO/FAMILY_ID [--cpu]
+## Usage: ./evaluate_lm_semantic.sh PATH/TO/FAMILY_ID
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/semantic
 ## 2) Compute representations of the language model (scripts/build_BERT_features.py or scripts/build_LSTM_features.py depending on the model)
@@ -13,7 +13,7 @@
 ##
 ## Example:
 ##
-## ./evaluate_lm_semantic.sh path/to/family_id [--cpu]
+## ./evaluate_lm_semantic.sh path/to/family_id
 ##
 ## Parameters:
 ##
@@ -93,14 +93,6 @@ else
 fi
 
 
-# cpu option
-DEVICE="gpu"
-ARG=$2
-if [ "${ARG}" == "--cpu" ]; then
-    DEVICE="cpu"
-fi
-
-
 # Verify INPUTS
 [ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
 [ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS not found: $BASELINE_SCRIPTS"
@@ -129,11 +121,6 @@ done
 
 # -- Compute representations of the language model (bert or lstm) depending on the model
 
-if [ "$DEVICE" == "cpu" ] ; then
-  ARGUMENTS="--cpu"
-else
-  ARGUMENTS="None"
-fi;
 
 for item in ${KIND[*]}
 do
@@ -142,12 +129,7 @@ do
     quantized="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}/quantized_outputs.txt"
     output="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}"
     lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-    if [ $ARGUMENTS == "None" ] ; then
-      python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}"
-    else
-      python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}" "$ARGUMENTS"
-    fi
-  done
+    python "${BASELINE_SCRIPTS}/scripts/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}"
 done
 
 

@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID [--cpu]
+## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/syntactic
 ## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
@@ -13,7 +13,7 @@
 ##
 ## Example:
 ##
-## ./evaluate_lm_syntactic.sh path/to/family_id [--cpu]
+## ./evaluate_lm_syntactic.sh path/to/family_id
 ##
 ## Parameters:
 ##
@@ -91,14 +91,6 @@ else
 fi
 
 
-# cpu option
-DEVICE="gpu"
-ARG=$2
-if [ "${ARG}" == "--cpu" ]; then
-    DEVICE="cpu"
-fi
-
-
 # Verify INPUTS
 [ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
 [ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS not found: $BASELINE_SCRIPTS"
@@ -125,9 +117,7 @@ done
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
 ARGUMENTS=""
-if [ "$DEVICE" == "cpu" ] ; then
-  ARGUMENTS="--cpu"
-elif [ "$MODEL" == "LSTM" ] ; then
+if [ "$MODEL" == "LSTM" ] ; then
   ARGUMENTS="--batchSize=64"
 else
   ARGUMENTS="None"
