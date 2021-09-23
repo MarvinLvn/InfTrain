@@ -1,2 +1,11 @@
 .idea/
 external_code/
+experiments/checkpoints
+experiments/eval
+experiments/experiments_txt
+experiments/last_experiments_txt
+experiments/logs
+data/
+WavAugment/
+.ipynb_checkpoints/
+test
