@@ -22,7 +22,7 @@
 ## ENVIRONMENT VARIABLES
 ##
 ## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
-## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../external_code/zerospeech2021_baseline)
+## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../utils)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## KIND                          the partition of the zerospeech dataset on which the evaluation is done (default: dev test)
@@ -67,7 +67,7 @@ function die() {
 [ $# -lt 1 ] && usage
 
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
-BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../external_code/zerospeech2021_baseline}"
+BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../utils}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 KIND=('dev')
