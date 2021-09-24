@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=ank@gpu
+#SBATCH --account=cfs@gpu
 #SBATCH --output=logs/eval_cpc_small_gpu_%A_%a.out
 #SBATCH --gres=gpu:4
 #SBATCH --cpus-per-task=8
