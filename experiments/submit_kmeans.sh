@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=cfs@gpu
+#SBATCH --account=ank@gpu
 #SBATCH --output=logs/kmeans_%A_%a.out
 #SBATCH --mem=128G
 #SBATCH --time=20:00:00
@@ -12,6 +12,6 @@
 # It will submit 1 job per line of experiments_txt/kmeans_experiments.txt
 # Arguments of trainers/train_cpc_small.sh must be lines of experiments_txt/cpc_small_experiments.txt
 
-ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/kmeans_experiments.txt)
+ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsdswork/projects/rech/ank/ucv88ce/projects/MultilingualCPC/experiments/experiments_txt/cpc_small_experiments.txt)
 cd ..
 ./trainers/train_kmeans.sh ${ARGS}

@@ -99,11 +99,11 @@ OUTPUT_LOCATION="${CHECKPOINT_LOCATION}"
 if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_small")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_small/checkpoint_${BEST_EPOCH}.pt"
-  OUTPUT_LOCATION="${OUTPUT_LOCATION}/cpc_small/ABX/${BEST_EPOCH}"
+  OUTPUT_LOCATION="${OUTPUT_LOCATION}/cpc_small/ABX_CV/${BEST_EPOCH}"
 elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
   BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/cpc_big")"
   CPC_CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/cpc_big/checkpoint_${BEST_EPOCH}.pt"
-  OUTPUT_LOCATION="${OUTPUT_LOCATION}/cpc_big/ABX/${BEST_EPOCH}"
+  OUTPUT_LOCATION="${OUTPUT_LOCATION}/cpc_big/ABX_CV/${BEST_EPOCH}"
 else
   die "No CPC checkpoints found for family ${FAMILY_ID}"
 fi
@@ -128,11 +128,9 @@ if [ ! -f ${CHECKPOINT_LOCATION}/cpc_small/done.state ] && [ ! -f ${CHECKPOINT_L
 fi
 
 for lang in en fr; do
-    #for s in ${lang} ${lang}_pos; do
-    for s in ${lang}; do
-        PATH_ITEM_FILE="$CV_DATASET/${lang}/${s}.item"
+        PATH_ITEM_FILE="$CV_DATASET/${lang}/${lang}.item"
         LANG_DATASET="${CV_DATASET}/${lang}" 
-        PATH_OUT="$OUTPUT_LOCATION/cv_test/${lang}/${s}"
+        PATH_OUT="$OUTPUT_LOCATION/${lang}"
         echo $PATH_OUT
         mkdir -p "$PATH_OUT"
 
