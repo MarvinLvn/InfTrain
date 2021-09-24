@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --account=ank@gpu
+#SBATCH --account=cfs@gpu
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
