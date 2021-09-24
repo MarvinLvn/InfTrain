@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=ank@gpu
+#SBATCH --account=cfs@gpu
 #SBATCH --nodes=8                     # nombre de noeud
 #SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud

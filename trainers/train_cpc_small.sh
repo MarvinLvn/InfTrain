@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=ank@gpu
+#SBATCH --account=cfs@gpu
 #SBATCH --nodes=2                     # nombre de noeud
 #SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=10
