@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID [--cpu]
+## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID
 ##
 ## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/syntactic
 ## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
@@ -13,7 +13,7 @@
 ##
 ## Example:
 ##
-## ./evaluate_lm_syntactic.sh path/to/family_id [--cpu]
+## ./evaluate_lm_syntactic.sh path/to/family_id
 ##
 ## Parameters:
 ##
@@ -22,7 +22,7 @@
 ## ENVIRONMENT VARIABLES
 ##
 ## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
-## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../external_code/zerospeech2021_baseline)
+## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../utils)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
 ## KIND                          the partition of the zerospeech dataset on which the evaluation is done (default: dev test)
@@ -66,7 +66,7 @@ function die() {
 [ $# -lt 1 ] && usage
 
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
-BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../external_code/zerospeech2021_baseline}"
+BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../utils}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 KIND=('dev')
@@ -88,14 +88,6 @@ if [ -d "$FAMILY_ID/$CPC/clustering_kmeans50" ]; then
   CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
 else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
-fi
-
-
-# cpu option
-DEVICE="gpu"
-ARG=$2
-if [ "${ARG}" == "--cpu" ]; then
-    DEVICE="cpu"
 fi
 
 
@@ -125,9 +117,7 @@ done
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 
 ARGUMENTS=""
-if [ "$DEVICE" == "cpu" ] ; then
-  ARGUMENTS="--cpu"
-elif [ "$MODEL" == "LSTM" ] ; then
+if [ "$MODEL" == "LSTM" ] ; then
   ARGUMENTS="--batchSize=64"
 else
   ARGUMENTS="None"
