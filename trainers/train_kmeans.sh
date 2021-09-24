@@ -30,12 +30,6 @@ PATH_CPC=${PATH_CPC}/checkpoint_${BEST_EPOCH}.pt
 
 LEVEL_GRU=2
 
-if [ -f ${PATH_CPT}/running.state ]; then
-  echo "${PATH_CPT}/running.state found. Not running anything."
-  exit
-fi;
-
-
 #mkdir -p ${PATH_CPT}
 #touch ${PATH_CPT}/running.state
 echo "Start training $PATH_CPT"
@@ -43,7 +37,3 @@ echo "Start training $PATH_CPT"
 python /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/clustering/clustering_script.py ${PATH_CPC} ${PATH_CPT} ${PATH_DB} --recursionLevel 2 --extension wav \
         --nClusters 50 --MAX_ITER $NB_EPOCHS --save --batchSizeGPU 200 --level_gru ${LEVEL_GRU} --perIterSize 1406 --save-last 5
 
-rm ${PATH_CPT}/running.state
-if [ -f ${PATH_CPT}/checkpoint${NB_EPOCHS}.pt ]; then
-  touch ${PATH_CPT}/done.state
-fi;

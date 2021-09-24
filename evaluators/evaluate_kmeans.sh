@@ -69,7 +69,7 @@ function die() {
 # Paths
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/cv21_ABX/raw_dataset}"
 FILE_EXT="${FILE_EXTENSION:-.wav}"
 FEAT_SIZE="${FEAT_SIZE:-0.01}"
 
@@ -91,11 +91,10 @@ CHECKPOINT_FILE=""
 OUTPUT_LOCATION=""
 
 # Find best epoch checkpoint to use for evaluation
-if [ -d "${CHECKPOINT_LOCATION}/kmeans_50" ]; then
+if [ -d "${CHECKPOINT_LOCATION}/kmeans50" ]; then
 #if [ -d "${CHECKPOINT_LOCATION}/bad_folder" ]; then
-  BEST_EPOCH="$(python "$BEST_EPOCH_PY" --output-id --model_path "${CHECKPOINT_LOCATION}/kmeans_50")"
-  CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/kmeans_50/checkpoint_${BEST_EPOCH}.pt"
-  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans_50/ABX/${BEST_EPOCH}"
+  CHECKPOINT_FILE="${MODEL_LOCATION}${FAMILY_ID}/kmeans50/checkpoint_last.pt"
+  OUTPUT_LOCATION="${CHECKPOINT_LOCATION}/kmeans50/ABX/last"
 else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
 #  echo "debugging: remove this !!!"
@@ -126,18 +125,19 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "-------------- CMDs ---------------------------"
 fi
 
-for lang in french english
+for lang in fr en
 do
-  DATA="${ZEROSPEECH_DATASET}/${lang}/1s"
-  ITEM_PATH="${DATA}/1s.item"
+  DATA="${ZEROSPEECH_DATASET}/${lang}"
+  ITEM_PATH="${DATA}/${lang}.item"
 
   PATH_OUT="$OUTPUT_LOCATION/${lang}"
-  OUT_FILE="${PATH_OUT}/abx_scores.json"
+  OUT_FILE="${PATH_OUT}/ABX_scores.json"
 
   if [[ $DRY_RUN == "true" ]]; then
     echo "=> python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE"
     echo "-----------------------------"
   else
+    rm $OUT_FILE
     mkdir -p $PATH_OUT
     srun python $ABX_PY --file-extension .wav --name-output $OUT_FILE --path_audio_data $DATA --path_abx_item $ITEM_PATH --clustering $CHECKPOINT_FILE
   fi

@@ -24,9 +24,10 @@ KMEANS="kmeans_50"
 
 if [ -d ${MODEL_PATH}/$CPC ]; then
   BEST_EPOCH=$(python $BEST_VAL_SCRIPT --model_path ${MODEL_PATH}/${CPC} | grep -oP "(?<=is : )([0-9]+)")
-  if [ ! -d ${MODEL_PATH}/${CPC}/ABX_CV/${BEST_EPOCH} ]; then
-    echo ${PATH_DB} >> experiments_txt/cpc_eval_experiments.txt
-  fi;
+  echo ${PATH_DB} >> experiments_txt/cpc_eval_experiments.txt
+  #if [ ! -d ${MODEL_PATH}/${CPC}/ABX_CV/${BEST_EPOCH} ]; then
+  #  echo ${PATH_DB} >> experiments_txt/cpc_eval_experiments.txt
+  #fi;
 fi;
 
 # Need to do the same for K-means, and language models
