@@ -2,8 +2,8 @@
 #SBATCH --account=cfs@gpu
 #SBATCH --mem=128G
 #SBATCH --time=20:00:00
-#SBATCH --gres=gpu:1                # nombre de GPU a reserver
-#SBATCH --cpus-per-task=10          # nombre de cpus par GPU : rule of thumb n_cpu = 10*n_gpus
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=10
 #SBATCH --hint=nomultithread
 
 PATH_DB=$1

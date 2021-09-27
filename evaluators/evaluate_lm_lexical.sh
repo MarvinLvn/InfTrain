@@ -98,9 +98,9 @@ fi
 
 
 # check that script exists
-[ ! -f "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" ] && die "Quantize audio was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_BERT.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}/scripts"
-[ ! -f "${BASELINE_SCRIPTS}/scripts/compute_proba_LSTM.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}/scripts"
+[ ! -f "${BASELINE_SCRIPTS}/quantize_audio.py" ] && die "Quantize audio was not found in ${BASELINE_SCRIPTS}"
+[ ! -f "${BASELINE_SCRIPTS}/compute_proba_BERT.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}"
+[ ! -f "${BASELINE_SCRIPTS}/compute_proba_LSTM.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}"
 
 
 # -- Extract quantized units on zerospeech20201/lexical
@@ -111,7 +111,7 @@ for item in ${KIND[*]}
 do
   datafiles="${ZEROSPEECH_DATASET}/lexical/$item"
   output="${OUTPUT_LOCATION}/features_lex/lexical/$item"
-  python "${BASELINE_SCRIPTS}/scripts/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
+  python "${BASELINE_SCRIPTS}/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
 done
 
 
@@ -122,7 +122,7 @@ do
   quantized="$OUTPUT_LOCATION/features_lex/lexical/$item/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features_lex/lexical/$item.txt"
   lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-  python "${BASELINE_SCRIPTS}/scripts/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
+  python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
 done
 
 

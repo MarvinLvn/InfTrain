@@ -13,7 +13,7 @@ from cpc.feature_loader import buildFeature, buildFeature_batch
 
 from utils.utils_functions import readArgs, writeArgs, loadCPCFeatureMaker, loadClusterModule
 
-def quantize_file(file_path, cpc_feature_function, clusterModule):
+def quantize_file(file_path, cpc_feature_function, clusterModule, cpu=False):
     # Get CPC features
     cFeatures = cpc_feature_function(file_path)
     if clusterModule.Ck.is_cuda:
@@ -27,7 +27,7 @@ def quantize_file(file_path, cpc_feature_function, clusterModule):
         clusterModule = clusterModule.cpu()
         cFeatures = cFeatures.cpu()
         qFeatures = torch.argmin(clusterModule(cFeatures), dim=-1)
-        if not args.cpu:
+        if not cpu:
             clusterModule = clusterModule.cuda()
     else:
         qFeatures = torch.argmin(clusterModule(cFeatures), dim=-1)
@@ -245,7 +245,7 @@ def main(argv):
         file_path = os.path.join(args.pathDB, file_path)
 
         # Quantizing
-        quantLine = quantize_file(file_path, cpc_feature_function, clusterModule)
+        quantLine = quantize_file(file_path, cpc_feature_function, clusterModule, cpu=args.cpu)
 
         # Save the outputs
         file_name = os.path.splitext(os.path.basename(file_path))[0]

@@ -9,7 +9,7 @@ dependencies:
   - cudatoolkit=9.2
   - cython
   - nose
-  - numpy
+  - numpy>=1.20
   - openblas-devel
   - pip
   - psutil
