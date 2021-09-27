@@ -177,8 +177,8 @@ def main(argv):
     assert args.pathClusteringCheckpoint[-3:] == ".pt"
     if os.path.exists(args.pathClusteringCheckpoint[:-3] + "_args.json"):
         pathConfig = args.pathClusteringCheckpoint[:-3] + "_args.json"
-    elif os.path.exists(os.path.join(os.path.dirname(args.pathClusteringCheckpoint), "checkpoint_args.json")):
-        pathConfig = os.path.join(os.path.dirname(args.pathClusteringCheckpoint), "checkpoint_args.json")
+    elif os.path.exists(os.path.join(os.path.dirname(args.pathClusteringCheckpoint), "args.json")):
+        pathConfig = os.path.join(os.path.dirname(args.pathClusteringCheckpoint), "args.json")
     else:
         assert False, \
             f"Args file not found in the directory {os.path.dirname(args.pathClusteringCheckpoint)}"
