@@ -15,9 +15,9 @@ if [ "$#" -ne 1 ]; then
 fi
 
 # to be deleted
-MODELS_PATH=/checkpoint/marvinlvn/InfTrain
-BASELINE_SCRIPTS=../../utils # to be changed
-FAIRSEQ_SCRIPTS=../../fairseq
+MODELS_PATH=${ALL_CCFRSCRATCH}/InfTrain_models
+BASELINE_SCRIPTS=../utils # to be changed
+FAIRSEQ_SCRIPTS=../fairseq
 FILE_EXT=.wav
 
 # Arguments
@@ -36,20 +36,20 @@ fi;
 TRAIN_SET=$PATH_DB
 OUTPUT_LOCATION="$JOBSCRATCH/${LANGUAGE}_${SIZE}_${SHARE}"
 OUTPUT=$OUTPUT_LOCATION/quantized_train
-#rm -rf $OUTPUT
-#python "${BASELINE_SCRIPTS}/quantize_audio.py" "${PATH_KMEANS}" "${TRAIN_SET}" "${OUTPUT}" --file_extension $FILE_EXT
+rm -rf $OUTPUT
+python "${BASELINE_SCRIPTS}/quantize_audio.py" "${PATH_KMEANS}" "${TRAIN_SET}" "${OUTPUT}" --file_extension $FILE_EXT
 # + convert format
-#cat $OUTPUT_LOCATION/quantized_train/quantized_outputs.txt | awk '{print $2}' | sed 's/,/ /g' > $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
+cat $OUTPUT_LOCATION/quantized_train/quantized_outputs.txt | awk '{print $2}' | sed 's/,/ /g' > $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
 # + split train/val/test
-#python ${BASELINE_SCRIPTS}/split_train_val_test_lm.py --input_file $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
-#
-## 2) Fairseq preprocess
-#fairseq-preprocess --only-source \
-#      --trainpref $OUTPUT_LOCATION/quantized_train/fairseq_train.txt \
-#      --validpref $OUTPUT_LOCATION/quantized_train/fairseq_val.txt \
-#      --testpref $OUTPUT_LOCATION/quantized_train/fairseq_test.txt \
-#      --destdir $OUTPUT_LOCATION/fairseq_bin_data \
-#      --workers 20
+python ${BASELINE_SCRIPTS}/split_train_val_test_lm.py --input_file $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
+
+# 2) Fairseq preprocess
+fairseq-preprocess --only-source \
+      --trainpref $OUTPUT_LOCATION/quantized_train/fairseq_train.txt \
+      --validpref $OUTPUT_LOCATION/quantized_train/fairseq_val.txt \
+      --testpref $OUTPUT_LOCATION/quantized_train/fairseq_test.txt \
+      --destdir $OUTPUT_LOCATION/fairseq_bin_data \
+      --workers 20
 
 
 # 3) Train models
