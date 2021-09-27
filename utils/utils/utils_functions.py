@@ -3,7 +3,7 @@ import argparse
 
 import torch
 from cpc.feature_loader import FeatureModule, loadModel
-from cpc.criterion.clustering import kMeanCluster
+from cpc.clustering import kMeanCluster
 
 from fairseq import tasks, checkpoint_utils
 from fairseq.models.roberta import RobertaModel, RobertaHubInterface
