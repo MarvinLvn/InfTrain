@@ -77,17 +77,25 @@ FAMILY_ID=$(echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")")
 if [ -d "${FAMILY_ID}/cpc_small" ]; then
   CPC="cpc_small"
   MODEL="LSTM"
-else
+elif [ -d "${FAMILY_ID}/cpc_big" ]; then
   CPC="cpc_big"
   MODEL="BERT"
+else
+  die "No CPC checkpoints found for family ${FAMILY_ID}"
 fi
 
 OUTPUT_LOCATION="$JOBSCRATCH/$CPC"
 
-if [ -d "$FAMILY_ID/$CPC/clustering_kmeans50" ]; then
-  CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
+if [ -d "${FAMILY_ID}/kmeans50" ]; then
+  CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/kmeans50/checkpoint_last.pt"
 else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+fi
+
+if [ -d "${FAMILY_ID}/${MODEL,,}" ]; then
+  LM_CHECKPOINT_FILE="$FAMILY_ID/${MODEL,,}/checkpoint_best.pt"
+else
+  die "No ${MODEL} checkpoints found for family ${FAMILY_ID}"
 fi
 
 
@@ -127,11 +135,10 @@ for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features_syn/syntactic/${item}/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features_syn/syntactic/$item.txt"
-  lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
   if [ "$ARGUMENTS" == "None" ] ; then
-    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}"
+    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
   else
-    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${lm_checkpoint}" "${ARGUMENTS}"
+    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}" "${ARGUMENTS}"
   fi
 done
 
@@ -168,6 +175,5 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/sblimp" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $FAMILY_ID/$CPC/scores/sblimp
-cp -r $OUTPUT_LOCATION/scores/sblimp $FAMILY_ID/$CPC/scores
-
+mkdir -p $FAMILY_ID/${MODEL,,}/scores/sblimp
+cp -r $OUTPUT_LOCATION/scores/sblimp $FAMILY_ID/${MODEL,,}/scores
