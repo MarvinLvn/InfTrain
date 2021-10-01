@@ -79,17 +79,25 @@ FAMILY_ID=$(echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")")
 if [ -d "${FAMILY_ID}/cpc_small" ]; then
   CPC="cpc_small"
   MODEL="LSTM"
-else
+elif [ -d "${FAMILY_ID}/cpc_big" ]; then
   CPC="cpc_big"
   MODEL="BERT"
+else
+  die "No CPC checkpoints found for family ${FAMILY_ID}"
 fi
 
 OUTPUT_LOCATION="$JOBSCRATCH/$CPC"
 
-if [ -d "$FAMILY_ID/$CPC/clustering_kmeans50" ]; then
-  CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/$CPC/clustering_kmeans50/clustering_CPC_big_kmeans50.pt"
+if [ -d "${FAMILY_ID}/kmeans50" ]; then
+  CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/kmeans50/checkpoint_last.pt"
 else
   die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+fi
+
+if [ -d "${FAMILY_ID}/${MODEL,,}" ]; then
+  LM_CHECKPOINT_FILE="$FAMILY_ID/${MODEL,,}/checkpoint_best.pt"
+else
+  die "No ${MODEL} checkpoints found for family ${FAMILY_ID}"
 fi
 
 
@@ -128,8 +136,8 @@ do
   do
     quantized="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}/quantized_outputs.txt"
     output="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}"
-    lm_checkpoint="$FAMILY_ID/$CPC/$MODEL/${MODEL}_CPC_big_kmeans50.pt" # checkpoint of the model in part 3 of trainig
-    python "${BASELINE_SCRIPTS}/build_${MODEL}_features.py" "${quantized}" "${output}" "${lm_checkpoint}"
+    python "${BASELINE_SCRIPTS}/build_${MODEL}_features.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
+  done
 done
 
 
@@ -165,7 +173,5 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-syntactic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/ssimi" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $FAMILY_ID/$CPC/scores/ssimi
-cp -r $OUTPUT_LOCATION/scores/ssimi $FAMILY_ID/$CPC/scores
-
-
+mkdir -p $FAMILY_ID/${MODEL,,}/scores/ssimi
+cp -r $OUTPUT_LOCATION/scores/ssimi $FAMILY_ID/${MODEL,,}/scores
