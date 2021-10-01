@@ -1,5 +1,6 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
+#SBATCH -C v100-32g
 #SBATCH --mem=128G
 #SBATCH --nodes=1
 #SBATCH --time=20:00:00
@@ -64,9 +65,9 @@ fairseq-preprocess --only-source \
       --destdir $OUTPUT_LOCATION/fairseq_bin_data \
       --workers 20
 
-
 # 3) Train models
 MODEL_OUTPUT=${MODELS_PATH}/${LANGUAGE}/${SIZE}/${SHARE}/lstm
+cp $OUTPUT_LOCATION/fairseq_bin_data/dict.txt $MODEL_OUTPUT
 python ${FAIRSEQ_SCRIPTS}/train.py --fp16 $OUTPUT_LOCATION/fairseq_bin_data \
       --task language_modeling \
       --save-dir ${MODEL_OUTPUT} \

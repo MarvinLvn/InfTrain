@@ -16,7 +16,7 @@ SIZE=${SIZE/h/}
 
 CPC="cpc_small"
 LM="lstm"
-KMEANS="kmeans_50"
+KMEANS="kmeans50"
 #if [ $SIZE -ge 800 ]; then
 #  CPC="cpc_big"
 #  LM="bert_large"
@@ -24,10 +24,17 @@ KMEANS="kmeans_50"
 
 if [ -d ${MODEL_PATH}/$CPC ]; then
   BEST_EPOCH=$(python $BEST_VAL_SCRIPT --model_path ${MODEL_PATH}/${CPC} | grep -oP "(?<=is : )([0-9]+)")
-  echo ${PATH_DB} >> experiments_txt/cpc_eval_experiments.txt
-  #if [ ! -d ${MODEL_PATH}/${CPC}/ABX_CV/${BEST_EPOCH} ]; then
-  #  echo ${PATH_DB} >> experiments_txt/cpc_eval_experiments.txt
-  #fi;
+  #echo ${PATH_DB} >> experiments_txt/cpc_eval_experiments.txt
+  if [ ! -f ${MODEL_PATH}/${CPC}/ABX_CV/${BEST_EPOCH}/en/ABX_scores.json ] || [ ! -f ${MODEL_PATH}/${CPC}/ABX_CV/${BEST_EPOCH}/fr/ABX_scores.json ] ; then
+    echo ${PATH_DB} >> experiments_txt/cpc_eval_experiments.txt
+  fi;
 fi;
 
-# Need to do the same for K-means, and language models
+ if [ -d ${MODEL_PATH}/$KMEANS ]; then
+    BEST_EPOCH=last
+    if [ ! -f ${MODEL_PATH}/${KMEANS}/ABX/${BEST_EPOCH}/en/ABX_scores.json ] || [ ! -f ${MODEL_PATH}/${KMEANS}/ABX/${BEST_EPOCH}/fr/ABX_scores.json ] ; then
+      echo ${PATH_DB} >> experiments_txt/kmeans_eval_experiments.txt
+    fi;
+ fi;
+
+# Need to do the same for language models
