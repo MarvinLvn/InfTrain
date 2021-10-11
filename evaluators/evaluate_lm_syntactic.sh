@@ -21,6 +21,8 @@
 ##
 ## ENVIRONMENT VARIABLES
 ##
+## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
+## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
 ## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
 ## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../utils)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
@@ -32,7 +34,8 @@
 ## https://github.com/bootphon/zerospeech2021_baseline
 ## https://docs.google.com/spreadsheets/d/1pcT_6YLdQ5Oa2pO21mRKzzU79ZPUZ-BfU2kkXg2mayE/edit?usp=drive_web&ouid=112305914309228781110
 
-
+# check only parameters without running eval
+DRY_RUN="${DRY_RUN:-false}"
 
 # --- Various utility functions & variables
 
@@ -65,37 +68,43 @@ function die() {
 [ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
 [ $# -lt 1 ] && usage
 
+# paths
+MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
+FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
+
 BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-utils}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 KIND=('dev')
 
-FAMILY_ID=$(echo "$(cd "$(dirname "$1")"; pwd)/$(basename "$1")")
+PATH_TO_FAMILY=$1
 
+FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
+CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 
-if [ -d "${FAMILY_ID}/cpc_small" ]; then
+if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
   CPC="cpc_small"
   MODEL="LSTM"
-elif [ -d "${FAMILY_ID}/cpc_big" ]; then
+elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
   CPC="cpc_big"
   MODEL="BERT"
 else
-  die "No CPC checkpoints found for family ${FAMILY_ID}"
+  die "No CPC checkpoints found for family ${CHECKPOINT_LOCATION}"
 fi
 
-OUTPUT_LOCATION="$JOBSCRATCH/$CPC"
+OUTPUT_LOCATION="$JOBSCRATCH$CPC"
 
-if [ -d "${FAMILY_ID}/kmeans50" ]; then
-  CLUSTERING_CHECKPOINT_FILE="$FAMILY_ID/kmeans50/checkpoint_last.pt"
+if [ -d "${CHECKPOINT_LOCATION}/kmeans50" ]; then
+  CLUSTERING_CHECKPOINT_FILE="$CHECKPOINT_LOCATION/kmeans50/checkpoint_last.pt"
 else
-  die "No CPC-kmeans checkpoints found for family ${FAMILY_ID}"
+  die "No CPC-kmeans checkpoints found for family ${CHECKPOINT_LOCATION}"
 fi
 
-if [ -d "${FAMILY_ID}/${MODEL,,}" ]; then
-  LM_CHECKPOINT_FILE="$FAMILY_ID/${MODEL,,}/checkpoint_best.pt"
+if [ -d "${CHECKPOINT_LOCATION}/${MODEL,,}" ]; then
+  LM_CHECKPOINT_FILE="$CHECKPOINT_LOCATION/${MODEL,,}/checkpoint_best.pt"
 else
-  die "No ${MODEL} checkpoints found for family ${FAMILY_ID}"
+  die "No ${MODEL} checkpoints found for family ${CHECKPOINT_LOCATION}"
 fi
 
 
@@ -110,8 +119,23 @@ fi
 [ ! -f "${BASELINE_SCRIPTS}/compute_proba_BERT.py" ] && die "Compute proba BERT was not found in ${BASELINE_SCRIPTS}"
 [ ! -f "${BASELINE_SCRIPTS}/compute_proba_LSTM.py" ] && die "Compute proba LSTM was not found in ${BASELINE_SCRIPTS}"
 
-# -- Extract quantized units on zerospeech20201/syntactic
+#--debug print values && exit
+if [[ $DRY_RUN == "true" ]]; then
+  echo "-------------- VARIABLES ---------------------------"
+  echo "family-id: $FAMILY_ID"
+  echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
+  echo "model-location: $MODEL_LOCATION"
+  echo "families-location: $FAMILIES_LOCATION"
+  echo "checkpoint-location: $CHECKPOINT_LOCATION"
+  echo "clusturing-checkpoint-file: $CLUSTERING_CHECKPOINT_FILE"
+  echo "lm-checkpoint-file: $LM_CHECKPOINT_FILE"
+  echo "output-location: $OUTPUT_LOCATION"
+  echo "file-extension: $FILE_EXT"
+  echo "python $(which python)"
+  exit 0
+fi
 
+# -- Extract quantized units on zerospeech20201/syntactic
 mkdir -p $OUTPUT_LOCATION/features_syn/syntactic/{'dev','test'}
 
 for item in ${KIND[*]}
@@ -175,5 +199,5 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/sblimp" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $FAMILY_ID/${MODEL,,}/scores/sblimp
-cp -r $OUTPUT_LOCATION/scores/sblimp $FAMILY_ID/${MODEL,,}/scores
+mkdir -p $CHECKPOINT_LOCATION/${MODEL,,}/scores/sblimp
+cp -r $OUTPUT_LOCATION/scores/sblimp $CHECKPOINT_LOCATION/${MODEL,,}/scores
