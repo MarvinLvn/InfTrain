@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1                # nombre de GPU a reserver
 #SBATCH --cpus-per-task=10          # nombre de cpus par GPU : rule of thumb n_cpu = 10*n_gpus
 #SBATCH --hint=nomultithread
-#SBATCH --array=2-254%60
+#SBATCH --array=241-254%254
 
 # This script submits LSTM training experiments.
 # It will submit 1 job per line of experiments_txt/lstm_experiments.txt

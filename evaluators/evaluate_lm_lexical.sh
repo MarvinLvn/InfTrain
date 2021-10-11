@@ -66,7 +66,7 @@ function die() {
 [ $# -lt 1 ] && usage
 
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
-BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-../utils}"
+BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-utils}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 KIND=('dev')
@@ -112,7 +112,6 @@ fi
 
 
 # -- Extract quantized units on zerospeech20201/lexical
-
 mkdir -p $OUTPUT_LOCATION/features_lex/lexical/{'dev','test'}
 
 for item in ${KIND[*]}

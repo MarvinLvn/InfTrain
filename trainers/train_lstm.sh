@@ -38,37 +38,39 @@ fi;
 TRAIN_SET=$PATH_DB
 OUTPUT_LOCATION="$JOBSCRATCH/${LANGUAGE}_${SIZE}_${SHARE}"
 OUTPUT=$OUTPUT_LOCATION/quantized_train
-python "${BASELINE_SCRIPTS}/quantize_audio.py" "${PATH_KMEANS}" "${TRAIN_SET}" "${OUTPUT}" --file_extension $FILE_EXT --resume
+#python "${BASELINE_SCRIPTS}/quantize_audio.py" "${PATH_KMEANS}" "${TRAIN_SET}" "${OUTPUT}" --file_extension $FILE_EXT --resume
 
 # check nb files
 NB_FILES=$(find $TRAIN_SET -name "*$FILE_EXT" | wc -l)
 NB_LINES=$(cat $OUTPUT_LOCATION/quantized_train/quantized_outputs.txt | wc -l)
 
-echo "Found $NB_FILES files".
-echo "$(($NB_LINES+1)) sequences have been quantized"
+#echo "Found $NB_FILES files".
+#echo "$(($NB_LINES+1)) sequences have been quantized"
 
-if [ $(($NB_LINES+1)) -ne $NB_FILES ]; then
-  echo "Wrong number of quantized sequences. Stopped."
-  exit
-fi;
+#if [ $(($NB_LINES+1)) -ne $NB_FILES ]; then
+#  echo "Wrong number of quantized sequences. Stopped."
+#  exit
+#fi;
 
 # + convert format
-cat $OUTPUT_LOCATION/quantized_train/quantized_outputs.txt | awk '{print $2}' | sed 's/,/ /g' > $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
+#cat $OUTPUT_LOCATION/quantized_train/quantized_outputs.txt | awk '{print $2}' | sed 's/,/ /g' > $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
 # + split train/val/test
-python ${BASELINE_SCRIPTS}/split_train_val_test_lm.py --input_file $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
+#python ${BASELINE_SCRIPTS}/split_train_val_test_lm.py --input_file $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
 
 # 2) Fairseq preprocess
-fairseq-preprocess --only-source \
-      --trainpref $OUTPUT_LOCATION/quantized_train/fairseq_train.txt \
-      --validpref $OUTPUT_LOCATION/quantized_train/fairseq_val.txt \
-      --testpref $OUTPUT_LOCATION/quantized_train/fairseq_test.txt \
-      --destdir $OUTPUT_LOCATION/fairseq_bin_data \
-      --workers 20
+#fairseq-preprocess --only-source \
+#      --trainpref $OUTPUT_LOCATION/quantized_train/fairseq_train.txt \
+#      --validpref $OUTPUT_LOCATION/quantized_train/fairseq_val.txt \
+#      --testpref $OUTPUT_LOCATION/quantized_train/fairseq_test.txt \
+#      --destdir $OUTPUT_LOCATION/fairseq_bin_data \
+#      --workers 20
 
 # 3) Train models
 MODEL_OUTPUT=${MODELS_PATH}/${LANGUAGE}/${SIZE}/${SHARE}/lstm
-cp $OUTPUT_LOCATION/fairseq_bin_data/dict.txt $MODEL_OUTPUT
-python ${FAIRSEQ_SCRIPTS}/train.py --fp16 $OUTPUT_LOCATION/fairseq_bin_data \
+mkdir -p $MODEL_OUTPUT
+#cp $OUTPUT_LOCATION/fairseq_bin_data/dict.txt $MODEL_OUTPUT
+#cp -r $OUTPUT_LOCATION/fairseq_bin_data $MODEL_OUTPUT
+python ${FAIRSEQ_SCRIPTS}/train.py --fp16 $MODEL_OUTPUT/fairseq_bin_data \
       --task language_modeling \
       --save-dir ${MODEL_OUTPUT} \
       --keep-last-epochs 2 \
