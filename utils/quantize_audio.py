@@ -98,13 +98,13 @@ def main(argv):
     print("")
     print(f"Looking for all {args.file_extension} files in {args.pathDB}")
     seqNames, _ = findAllSeqs(args.pathDB,
-                                 speaker_level=1,
+                                 speaker_level=0,
                                  extension=args.file_extension,
                                  loadCache=True)
     if len(seqNames) == 0 or not os.path.splitext(seqNames[0][1])[1].endswith(args.file_extension):
         print(f"Seems like the _seq_cache.txt does not contain the correct extension, reload the file list")
         seqNames, _ = findAllSeqs(args.pathDB,
-                                    speaker_level=1,
+                                    speaker_level=0,
                                     extension=args.file_extension,
                                     loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
