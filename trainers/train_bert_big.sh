@@ -51,9 +51,9 @@ if [ $(($NB_LINES+1)) -ne $NB_FILES ]; then
   exit
 fi;
 
- + convert format
+# + convert format
 cat $OUTPUT_LOCATION/quantized_train/quantized_outputs.txt | awk '{print $2}' | sed 's/,/ /g' > $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
- + split train/val/test
+# + split train/val/test
 python ${BASELINE_SCRIPTS}/split_train_val_test_lm.py --input_file $OUTPUT_LOCATION/quantized_train/quantized_outputs_2.txt
 
 # 2) Fairseq preprocess
