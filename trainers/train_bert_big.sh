@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
 #SBATCH --nodes=8                     # nombre de noeud
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=10
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
 #SBATCH --time=20:00:00
@@ -84,11 +84,8 @@ export MASTER_PORT=13369
 export NCCL_DEBUG=INFO
 
 start=`date +%s`
-srun sh -c 'echo $SLURM_PROCID; python -m torch.distributed.launch \
---nproc_per_node=4 --nnodes=$SLURM_JOB_NUM_NODES --node_rank=$SLURM_PROCID \
---master_addr='${MASTER}' --master_port='${MASTER_PORT}' \
-$(which fairseq-train) --fp16 '$MODEL_OUTPUT'/fairseq_bin_data \
---save-dir '${MODEL_OUTPUT}' \
+srun python /gpfsscratch/rech/cfs/uow84uh/InfTrain/fairseq/train.py --fp16 $MODEL_OUTPUT/fairseq_bin_data \
+--save-dir ${MODEL_OUTPUT} \
 --keep-last-epochs 1 \
 --tensorboard-logdir tensorboard \
 --train-subset train \
@@ -99,9 +96,9 @@ $(which fairseq-train) --fp16 '$MODEL_OUTPUT'/fairseq_bin_data \
 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 --clip-norm 0.0 \
 --lr-scheduler polynomial_decay --lr 0.0005 --total-num-update 250000 --warmup-updates 10000 \
 --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
---mask-multiple-length '$SPAN_SIZE' --mask-prob 0.5 --mask-stdev '$SPAN_SIZE' \
---max-tokens '$MAX_TOKENS' --max-update 250000 \
+--mask-multiple-length $SPAN_SIZE --mask-prob 0.5 --mask-stdev $SPAN_SIZE \
+--max-tokens $MAX_TOKENS --max-update 250000 \
 --seed 5 --log-format simple --log-interval 10 --skip-invalid-size-inputs-valid-test \
---distributed-world-size '$TOTAL_GPU' --distributed-port '$DISTRIBUTED_PORT''
+--distributed-world-size $TOTAL_GPU --distributed-port $DISTRIBUTED_PORT
 end=`date +%s`
 runtime=$((end-start))

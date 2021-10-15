@@ -2,11 +2,11 @@
 #SBATCH --output=logs/bert_%A_%a.out
 #SBATCH --account=cfs@gpu
 #SBATCH --nodes=8                     # nombre de noeud
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=10
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-#SBATCH --array=253-254%254
+#SBATCH --array=1-1%254
 #SBATCH --time=20:00:00
 
 # This script submits LSTM training experiments.
