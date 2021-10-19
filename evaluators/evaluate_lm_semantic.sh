@@ -160,7 +160,7 @@ do
   do
     quantized="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}/quantized_outputs.txt"
     output="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}"
-    python "${BASELINE_SCRIPTS}/build_${MODEL}_features.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
+    python "${BASELINE_SCRIPTS}/build_${MODEL/_small/}_features.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
   done
 done
 

@@ -153,7 +153,7 @@ for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features_lex/lexical/$item/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features_lex/lexical/$item.txt"
-  python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
+  python "${BASELINE_SCRIPTS}/compute_proba_${MODEL/_small/}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
 done
 
 

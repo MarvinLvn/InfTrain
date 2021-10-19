@@ -160,9 +160,9 @@ do
   quantized="$OUTPUT_LOCATION/features_syn/syntactic/${item}/quantized_outputs.txt"
   output="$OUTPUT_LOCATION/features_syn/syntactic/$item.txt"
   if [ "$ARGUMENTS" == "None" ] ; then
-    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
+    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL/_small/}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
   else
-    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}" "${ARGUMENTS}"
+    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL/_small/}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}" "${ARGUMENTS}"
   fi
 done
 
