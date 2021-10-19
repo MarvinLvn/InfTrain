@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
 #SBATCH --time=10:00:00
-#SBATCH --array=1-254%254
+#SBATCH --array=253-254%254
 #SBATCH --hint=nomultithread          # hyperthreading desactive
 
 source activate inftrain
