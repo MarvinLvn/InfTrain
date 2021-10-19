@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --output=logs/eval_cpc_big_%A_%a.out
+#SBATCH --output=../logs/eval_cpc_big_%A_%a.out
 #SBATCH --partition=prepost
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1

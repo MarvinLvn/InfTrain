@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --output=logs/kmeans_%A_%a.out
+#SBATCH --output=../logs/kmeans_%A_%a.out
 #SBATCH --mem=128G
 #SBATCH --time=20:00:00
 #SBATCH --gres=gpu:1                # nombre de GPU a reserver

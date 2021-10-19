@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=ank@gpu
-#SBATCH --output=logs/cpc_big_%A_%a.out
+#SBATCH --output=../logs/cpc_big_%A_%a.out
 #SBATCH --nodes=8                     # nombre de noeud
 #SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:4                  # nombre de GPUs par nœud

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=ank@gpu
-#SBATCH --output=logs/cpc_small_%A_%a.out
+#SBATCH --output=../logs/cpc_small_%A_%a.out
 #SBATCH --nodes=2                     # nombre de noeud
 #SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=10

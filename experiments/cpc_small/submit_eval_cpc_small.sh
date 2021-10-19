@@ -1,7 +1,6 @@
 #!/bin/bash
-
 #SBATCH --account=cfs@gpu
-#SBATCH --output=logs/eval_cpc_small_gpu_%A_%a.out
+#SBATCH --output=../logs/eval_cpc_small_gpu_%A_%a.out
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
