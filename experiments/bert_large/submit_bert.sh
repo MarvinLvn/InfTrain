@@ -14,5 +14,5 @@
 # Arguments of trainers/train_lstm.sh must be lines of experiments_txt/lstm_experiments.txt
 
 ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/bert_experiments.txt)
-cd ..
+cd ../..
 ./trainers/train_bert_big.sh ${ARGS}

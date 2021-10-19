@@ -20,6 +20,6 @@ source activate inftrain
 module load sox
 
 ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/cpc_small_experiments.txt)
-cd ..
+cd ../..
 ./evaluators/evaluate_cpc.sh ${ARGS}
 

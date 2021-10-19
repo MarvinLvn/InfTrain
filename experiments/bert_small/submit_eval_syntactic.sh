@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-#SBATCH --output=logs/eval_lexical_%A_%a.out
+#SBATCH --output=logs/bert_small_eval_syntactic_%A_%a.out
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --nodes=1
@@ -11,7 +11,7 @@
 source activate inftrain
 module load sox
 
-ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/lstm_experiments.txt)
-cd ..
-./evaluators/evaluate_lm_lexical.sh ${ARGS}
+ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/bert_experiments.txt)
+cd ../..
+./evaluators/evaluate_lm_syntactic.sh ${ARGS} bert_small
 

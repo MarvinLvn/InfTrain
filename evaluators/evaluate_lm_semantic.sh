@@ -13,11 +13,12 @@
 ##
 ## Example:
 ##
-## ./evaluate_lm_semantic.sh path/to/family_id
+## ./evaluate_lm_semantic.sh path/to/family_id model_type
 ##
 ## Parameters:
 ##
 ##   PATH/TO/FAMILY              the path to the family id.
+##   MODEL_TYPE                  language model to evaluate (bert|bert_small|lstm)
 ##
 ## ENVIRONMENT VARIABLES
 ##
@@ -67,7 +68,7 @@ function die() {
 # --- Input Validation & Processing
 # input arguments
 [ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
-[ $# -lt 1 ] && usage
+[ $# -lt 2 ] && usage
 
 # paths
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
@@ -81,16 +82,15 @@ KIND=('dev')
 CORPORA=('librispeech' 'synthetic')
 
 PATH_TO_FAMILY=$1
+MODEL=$2
 
 FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 
 if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
   CPC="cpc_small"
-  MODEL="LSTM"
 elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
   CPC="cpc_big"
-  MODEL="BERT"
 else
   die "No CPC checkpoints found for family ${CHECKPOINT_LOCATION}"
 fi
@@ -103,8 +103,8 @@ else
   die "No CPC-kmeans checkpoints found for family ${CHECKPOINT_LOCATION}"
 fi
 
-if [ -d "${CHECKPOINT_LOCATION}/${MODEL,,}" ]; then
-  LM_CHECKPOINT_FILE="$CHECKPOINT_LOCATION/${MODEL,,}/checkpoint_best.pt"
+if [ -d "${CHECKPOINT_LOCATION}/$MODEL" ]; then
+  LM_CHECKPOINT_FILE="$CHECKPOINT_LOCATION/$MODEL/checkpoint_best.pt"
 else
   die "No ${MODEL} checkpoints found for family ${CHECKPOINT_LOCATION}"
 fi
@@ -153,14 +153,15 @@ done
 
 # -- Compute representations of the language model (bert or lstm) depending on the model
 
-
+MODEL_TYPE=${MODEL/_small/}
+MODEL_TYPE=${MODEL^^}
 for item in ${KIND[*]}
 do
   for corpus in ${CORPORA[*]}
   do
     quantized="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}/quantized_outputs.txt"
     output="$OUTPUT_LOCATION/features_sem/semantic/${item}/${corpus}"
-    python "${BASELINE_SCRIPTS}/build_${MODEL/_small/}_features.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
+    python "${BASELINE_SCRIPTS}/build_${MODEL_TYPE}_features.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
   done
 done
 
@@ -197,5 +198,5 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-lexical --no-syntactic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/ssimi" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $CHECKPOINT_LOCATION/${MODEL,,}/scores/ssimi
-cp -r $OUTPUT_LOCATION/scores/ssimi $CHECKPOINT_LOCATION/${MODEL,,}/scores
+mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/ssimi
+cp -r $OUTPUT_LOCATION/scores/ssimi $CHECKPOINT_LOCATION/$MODEL/scores
