@@ -80,7 +80,7 @@ DISTRIBUTED_PORT=52663
 UPDATE_FREQ=$((128 / TOTAL_GPU))
 
 start=`date +%s`
-python /gpfsscratch/rech/cfs/uow84uh/InfTrain/fairseq/train.py --fp16 $MODEL_OUTPUT/fairseq_bin_data \
+python /gpfsscratch/rech/cfs/uow84uh/InfTrain/fairseq/train.py --fp16 ${MODEL_OUTPUT/bert_small/lstm}/fairseq_bin_data \
 --save-dir ${MODEL_OUTPUT} \
 --keep-last-epochs 1 \
 --tensorboard-logdir tensorboard \
