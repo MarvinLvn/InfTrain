@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --output=logs/small_bert_%A_%a.out
+#SBATCH --output=../logs/small_bert_%A_%a.out
 #SBATCH --account=cfs@gpu
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --hint=nomultithread          # hyperthreading desactive
