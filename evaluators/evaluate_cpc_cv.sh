@@ -136,7 +136,7 @@ for lang in en fr; do
 
         if [ ! -f ${PATH_OUT}/ABX_scores.json ]; then
 
-            srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT
+            srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --abx_analysis --file_extension $FILE_EXT --out $PATH_OUT
         fi;
     done;
 done
