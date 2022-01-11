@@ -1,6 +1,5 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
-##SBATCH --partition=prepost           # access to octo-gpus machines
 #SBATCH --nodes=1                     # nombre de noeud
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
 #SBATCH --time=10:00:00
