@@ -69,10 +69,10 @@ function die() {
 
 MODEL_LOCATION="${MODEL_LOCATION:-/checkpoint/marvinlvn/InfTrain/InfTrain_models}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/private/home/marvinlvn/DATA/CPC_data/train/InfTrain}"
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/private/home/marvinlvn/DATA/CPC_data/test/ABX_CV}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/private/home/marvinlvn/DATA/CPC_data/test/LibriSpeech}"
 ABX_PY="${ABX_PY:-/private/home/marvinlvn/InfTrain/CPC_torch/cpc/eval/eval_ABX.py}"
 BEST_EPOCH_PY="${BEST_EPOCH_PY:-/private/home/marvinlvn/InfTrain/utils/best_val_epoch.py}"
-FILE_EXT="${FILE_EXTENSION:-.wav}"
+FILE_EXT="${FILE_EXTENSION:-.flac}"
 GRU_LEVEL="${GRU_LEVEL:-2}"
 NB_JOBS="${EVAL_NB_JOBS:-20}"
 
@@ -134,10 +134,9 @@ if [[ $DRY_RUN == "true" ]]; then
 fi
 
 for lang in fr en; do
-  PATH_ITEM_FILE="$ZEROSPEECH_DATASET/${lang}/${lang}.item"
-  LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}"
+  PATH_ITEM_FILE="$ZEROSPEECH_DATASET/dev-clean.item"
+  LANG_DATASET="${ZEROSPEECH_DATASET}/dev-clean"
   PATH_OUT="$OUTPUT_LOCATION/${lang}"
   mkdir -p "$PATH_OUT"
   srun python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT --level_gru 2
-  #python $ABX_PY from_checkpoint $CPC_CHECKPOINT_FILE $PATH_ITEM_FILE --speaker-level 0 $LANG_DATASET --seq_norm --strict --file_extension $FILE_EXT --out $PATH_OUT --level_gru 2
 done

@@ -12,6 +12,6 @@
 # It will submit 1 job per line of experiments_txt/cpc_small_experiments.txt
 # Arguments of trainers/train_cpc_small.sh must be lines of experiments_txt/cpc_small_experiments.txt
 
-ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/cpc_small_experiments.txt)
+ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /private/home/marvinlvn/InfTrain/fair_submit/experiments/experiments_txt/cpc_small_experiments.txt)
 cd ..
 ./evaluators/evaluate_cpc.sh ${ARGS}

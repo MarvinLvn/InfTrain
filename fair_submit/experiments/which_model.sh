@@ -15,7 +15,7 @@ SHARE=${SHARE/share/}
 SIZE=$(basename $(dirname $MODEL_PATH))
 SIZE=${SIZE/h/}
 
-CPC="cpc_small"
+CPC="cpc_big"
 LM="lstm"
 KMEANS="kmeans_50"
 

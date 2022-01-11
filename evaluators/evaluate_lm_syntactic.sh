@@ -164,7 +164,7 @@ do
   if [ "$ARGUMENTS" == "None" ] ; then
     python "${BASELINE_SCRIPTS}/compute_proba_${MODEL_TYPE}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
   else
-    python "${BASELINE_SCRIPTS}/compute_proba_${MODE_TYPE}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}" "${ARGUMENTS}"
+    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL_TYPE}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}" "${ARGUMENTS}"
   fi
 done
 
