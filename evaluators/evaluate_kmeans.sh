@@ -27,7 +27,7 @@
 ## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsssd/scratch/rech/cfs/commun/zerospeech2017/data/test)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## ABX_PY                        the script to use for abx evaluation (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX.py)
-## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py)
+## BEST_EPOCH_PY                 the script to use to find the best epoch checkpoint (default: /gpfsscratch/rech/cfs/uow84uh/InfTrain/utils/best_val_epoch.py)
 ##
 ## More info:
 ## https://github.com/MarvinLvn/CPC_torch
@@ -75,7 +75,7 @@ FEAT_SIZE="${FEAT_SIZE:-0.01}"
 
 # Scripts
 ABX_PY="${ABX_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/CPC_torch/cpc/eval/eval_ABX_clustering.py}"
-BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py}"
+BEST_EPOCH_PY="${BEST_EPOCH_PY:-/gpfsscratch/rech/cfs/uow84uh/InfTrain/utils/best_val_epoch.py}"
 
 # Arguments
 PATH_TO_FAMILY=$1

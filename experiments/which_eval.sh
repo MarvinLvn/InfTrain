@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BEST_VAL_SCRIPT=/gpfsscratch/rech/cfs/uow84uh/nick_temp/InfTrain/utils/best_val_epoch.py
+BEST_VAL_SCRIPT=/gpfsscratch/rech/cfs/uow84uh/InfTrain/utils/best_val_epoch.py
 if [ "$#" -ne 2 ]; then
     echo "Illegal number of parameters"
     echo "./which_eval.sh /model/path /database/path"
