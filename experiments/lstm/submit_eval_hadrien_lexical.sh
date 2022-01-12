@@ -26,7 +26,4 @@ fi;
 ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/bert_experiments.txt)
 cd ../..
 
-# to be changed to
-# ./evaluators/evaluate_lm_hadrien_lexical.sh ${ARGS} $1 $2 $3
-# to use latest swuggy
-./evaluators/evaluate_lm_lexical.sh ${ARGS} $1 $2 $3
+./evaluators/evaluate_lm_hadrien_lexical.sh ${ARGS} $1 $2 $3
