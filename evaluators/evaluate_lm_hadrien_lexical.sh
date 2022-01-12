@@ -192,5 +192,5 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/swuggy_${TEST_LANGUAGE}_${TEST_SHARE}" $TEST_PATH $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/swuggy
-cp -r $OUTPUT_LOCATION/scores/swuggy $CHECKPOINT_LOCATION/$MODEL/scores
+mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}/${TEST_SHARE}
+cp -r $OUTPUT_LOCATION/scores/swuggy_${TEST_LANGUAGE}_${TEST_SHARE} $CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}
