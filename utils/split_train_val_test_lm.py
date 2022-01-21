@@ -30,7 +30,6 @@ def main(argv):
     for line in open(args.input_file, 'r').readlines():
         data.append(line)
 
-    random.shuffle(data)
     size_train = int((1-args.val_prop - args.test_prop) * len(data))
     size_val = int(args.val_prop * len(data))
     data_train, data_val, data_test = data[:size_train], data[size_train:size_train+size_val], data[size_train+size_val:]
