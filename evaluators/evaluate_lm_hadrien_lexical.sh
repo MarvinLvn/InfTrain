@@ -90,7 +90,7 @@ CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 
 output_file=$CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}/swuggy_${TEST_LANGUAGE}_${TEST_SHARE}/score_lexical_dev_by_pair.csv
 if [ -f $output_file ]; then
-  echo "$output_file found. Not running anything"
+  echo "$output_file found. Not running anything."
   exit
 fi;
 
@@ -158,6 +158,9 @@ done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 MODEL_TYPE=${MODEL/_small/}
+MODEL_TYPE=${MODEL/_sbm_none/}
+MODEL_TYPE=${MODEL/_sbm_complete/}
+MODEL_TYPE=${MODEL/_sbm_eos/}
 MODEL_TYPE=${MODEL^^}
 for item in ${KIND[*]}
 do

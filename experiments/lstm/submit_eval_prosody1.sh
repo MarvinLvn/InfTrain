@@ -11,7 +11,10 @@
 source activate inftrain
 module load sox
 
+if [[ $# -ne 1 ]]; then
+  echo "sbatch submit_eval_prosody1.sh bert_sbm_none"
+fi;
+
 ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/bert_experiments.txt)
 cd ../..
-./evaluators/evaluate_lm_prosody.sh ${ARGS} bert
-
+./evaluators/evaluate_lm_prosody.sh ${ARGS} $1

@@ -148,6 +148,9 @@ done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 MODEL_TYPE=${MODEL/_small/}
+MODEL_TYPE=${MODEL/_sbm_none/}
+MODEL_TYPE=${MODEL/_sbm_complete/}
+MODEL_TYPE=${MODEL/_sbm_eos/}
 MODEL_TYPE=${MODEL^^}
 for item in ${KIND[*]}
 do
