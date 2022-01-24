@@ -11,7 +11,11 @@
 source activate inftrain
 module load sox
 
-ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/lstm_experiments.txt)
+if [[ $# -ne 1 ]]; then
+  echo "sbatch submit_eval_syntactic.sh bert_sbm_none"
+fi;
+
+ARGS=$(sed -n "$SLURM_ARRAY_TASK_ID"p /gpfsscratch/rech/cfs/uow84uh/InfTrain/experiments/experiments_txt/bert_experiments.txt)
 cd ../..
-./evaluators/evaluate_lm_syntactic.sh ${ARGS} lstm
+./evaluators/evaluate_lm_syntactic.sh ${ARGS} $1
 
