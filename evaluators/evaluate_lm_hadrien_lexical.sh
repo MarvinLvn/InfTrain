@@ -158,10 +158,10 @@ done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 MODEL_TYPE=${MODEL/_small/}
-MODEL_TYPE=${MODEL/_sbm_none/}
-MODEL_TYPE=${MODEL/_sbm_complete/}
-MODEL_TYPE=${MODEL/_sbm_eos/}
-MODEL_TYPE=${MODEL^^}
+MODEL_TYPE=${MODEL_TYPE/_sbm_none/}
+MODEL_TYPE=${MODEL_TYPE/_sbm_complete/}
+MODEL_TYPE=${MODEL_TYPE/_sbm_eos/}
+MODEL_TYPE=${MODEL_TYPE^^}
 for item in ${KIND[*]}
 do
   quantized="$OUTPUT_LOCATION/features_lex/${TEST_LANGUAGE}/${TEST_SHARE}/lexical/$item/quantized_outputs.txt"
