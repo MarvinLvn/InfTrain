@@ -1,31 +1,30 @@
 #!/bin/bash
 #SBATCH --account=cfs@gpu
+##SBATCH --partition=prepost           # access to octo-gpus machines
 #SBATCH --nodes=1                     # nombre de noeud
 #SBATCH --gres=gpu:1                  # nombre de GPUs par nœud
-#SBATCH --time=15:00:00
+#SBATCH --time=10:00:00
 #SBATCH --hint=nomultithread          # hyperthreading desactive
-## Usage: ./evaluate_lm_lexical.sh PATH/TO/FAMILY_ID bert en testset_1
+## Usage: ./evaluate_lm_syntactic.sh PATH/TO/FAMILY_ID
 ##
-## 1) Extract quantized units (scripts/quantize_audio.py) on $ALL_CCFRSCRATCH/swuggy_hadrien/lexical
+## 1) Extract quantized units (scripts/quantize_audio.py) on zerospeech2021/syntactic
 ## 2) Compute pseudo-probabilities scripts/compute_proba_BERT.py or scripts/compute_proba_LSTM.py depending on the model
-## 3) Compute sWUGGY (lexical score)
+## 3) Compute sBLIMP (syntactic score)
 ##
 ## Example:
 ##
-## ./evaluate_lm_lexical.sh path/to/family_id model_type
+## ./evaluate_lm_syntactic.sh path/to/family_id model_type
 ##
 ## Parameters:
 ##
 ##   PATH/TO/FAMILY              the path to the family id.
 ##   MODEL_TYPE                  language model to evaluate (bert|bert_small|lstm)
-##   TEST_LANGUAGE               test language to be considered: en or fr
-##   TEST_SHARE                  subfolder to consider when evaluating: testset_{1,2,3,4,8,16,32,64}
 ##
 ## ENVIRONMENT VARIABLES
 ##
 ## MODEL_LOCATION                the root directory containing all the model checkpoint files (default: /gpfsscratch/rech/cfs/commun/InfTrain_models)
 ## FAMILIES_LOCATION             the root directory containing source dataset with families (default: /gpfsscratch/rech/cfs/commun/families)
-## TEST_PATH                     the location of the test set used for evaluation (default: /gpfsscratch/rech/cfs/commun/swuggy_hadrien)
+## ZEROSPEECH_DATASET            the location of the zerospeech dataset used for evaluation (default: /gpfsscratch/rech/cfs/commun/zerospeech2021_dataset)
 ## BASELINE_SCRIPTS              the location of the baseline script to use for feature extraction (default: ../utils)
 ## FILE_EXTENSION                the extension to use as input in the feature extraction (default: wav)
 ## EVAL_NB_JOBS                  the number of jobs to use for evaluation (default: 20)
@@ -68,11 +67,12 @@ function die() {
 # --- Input Validation & Processing
 # input arguments
 [ "$1" == "-h" -o "$1" == "-help" -o "$1" == "--help" ] && usage
-[ $# -lt 3 ] && usage
+[ $# -lt 2 ] && usage
 
 # paths
 MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models/big}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/prosodic_evaluation_wn003/prosodic_ps}"
 
 BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-utils}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
@@ -81,19 +81,9 @@ KIND=('dev')
 
 PATH_TO_FAMILY=$1
 MODEL=$2
-TEST_LANGUAGE=$3
-TEST_SHARE=$4
 
-TEST_PATH="${TEST_PATH:-/gpfsscratch/rech/cfs/commun/swuggy_hadrien/lexical/${TEST_LANGUAGE}/${TEST_SHARE}}"
 FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
-
-output_file=$CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}/swuggy_${TEST_LANGUAGE}_${TEST_SHARE}/score_lexical_dev_by_pair.csv
-if [ -f $output_file ]; then
-  echo "$output_file found. Not running anything"
-  exit
-fi;
-
 
 if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
   CPC="cpc_small"
@@ -119,7 +109,7 @@ fi
 
 
 # Verify INPUTS
-[ ! -d $TEST_PATH ] && die "TEST_PATH not found: $TEST_PATH"
+[ ! -d $ZEROSPEECH_DATASET ] && die "ZEROSPEECH_DATASET not found: $ZEROSPEECH_DATASET"
 [ ! -d $BASELINE_SCRIPTS ] && die "BASELINE_SCRIPTS not found: $BASELINE_SCRIPTS"
 [ ! -f $CLUSTERING_CHECKPOINT_FILE ] && [ "${CLUSTERING_CHECKPOINT_FILE: -3}" == ".pt" ] && die "Checkpoint file given does not exist or is not a valid .pt file: $CPC_CHECKPOINT_FILE"
 
@@ -133,7 +123,7 @@ fi
 if [[ $DRY_RUN == "true" ]]; then
   echo "-------------- VARIABLES ---------------------------"
   echo "family-id: $FAMILY_ID"
-  echo "test-set: $TEST_PATH"
+  echo "zerospeech-dataset: $ZEROSPEECH_DATASET"
   echo "model-location: $MODEL_LOCATION"
   echo "families-location: $FAMILIES_LOCATION"
   echo "checkpoint-location: $CHECKPOINT_LOCATION"
@@ -145,32 +135,44 @@ if [[ $DRY_RUN == "true" ]]; then
   exit 0
 fi
 
-# -- Extract quantized units on test set
-mkdir -p $OUTPUT_LOCATION/features_lex/${TEST_LANGUAGE}/${TEST_SHARE}/lexical/{'dev','test'}
+# -- Extract quantized units on zerospeech20201/syntactic
+mkdir -p $OUTPUT_LOCATION/features_syn/syntactic/{'dev','test'}
 
 for item in ${KIND[*]}
 do
-  datafiles="${TEST_PATH}/lexical/$item"
-  output="${OUTPUT_LOCATION}/features_lex/${TEST_LANGUAGE}/${TEST_SHARE}/lexical/$item"
+  datafiles="${ZEROSPEECH_DATASET}/syntactic/${item}"
+  output="${OUTPUT_LOCATION}/features_syn/syntactic/${item}"
   python "${BASELINE_SCRIPTS}/quantize_audio.py" "${CLUSTERING_CHECKPOINT_FILE}" "${datafiles}" "${output}" --file_extension $FILE_EXT
 done
 
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
+
+ARGUMENTS=""
+if [ "$MODEL" == "LSTM" ] ; then
+  ARGUMENTS="--batchSize=64"
+else
+  ARGUMENTS="None"
+fi;
+
 MODEL_TYPE=${MODEL/_small/}
 MODEL_TYPE=${MODEL^^}
 for item in ${KIND[*]}
 do
-  quantized="$OUTPUT_LOCATION/features_lex/${TEST_LANGUAGE}/${TEST_SHARE}/lexical/$item/quantized_outputs.txt"
-  output="$OUTPUT_LOCATION/features_lex/${TEST_LANGUAGE}/${TEST_SHARE}/lexical/$item.txt"
-  python "${BASELINE_SCRIPTS}/compute_proba_${MODEL_TYPE}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
+  quantized="$OUTPUT_LOCATION/features_syn/syntactic/${item}/quantized_outputs.txt"
+  output="$OUTPUT_LOCATION/features_syn/syntactic/$item.txt"
+  if [ "$ARGUMENTS" == "None" ] ; then
+    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL_TYPE}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}"
+  else
+    python "${BASELINE_SCRIPTS}/compute_proba_${MODEL_TYPE}.py" "${quantized}" "${output}" "${LM_CHECKPOINT_FILE}" "${ARGUMENTS}"
+  fi
 done
 
 
-# Compute SWUGGY
+# Compute SBLIMP
 # -- Prepare for evaluation
 
-FEATURES_LOCATION="${OUTPUT_LOCATION}/features_lex/${TEST_LANGUAGE}/${TEST_SHARE}"
+FEATURES_LOCATION="${OUTPUT_LOCATION}/features_syn"
 # meta.yaml (required by zerospeech2021-evaluate)
 cat <<EOF > $FEATURES_LOCATION/meta.yaml
 author: infantSim Train Eval
@@ -180,7 +182,7 @@ description: >
   BERT (trained on librispeech 960 encoded with the quantized units). See
   https://zerospeech.com/2021 for more details.
 open_source: true
-train_set: inftrain families
+train_set: librispeech 100 and 960
 gpu_budget: 1536
 parameters:
   phonetic:
@@ -193,11 +195,11 @@ EOF
 
 # required by zerospeech2021-evaluate to allow test evaluation
 if [[ ${KIND[*]} =~ (^|[[:space:]])"test"($|[[:space:]]) ]] ; then
-  export ZEROSPEECH2021_TEST_GOLD=$TEST_PATH
+  export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
 fi;
 
-zerospeech2021-evaluate --no-phonetic --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/swuggy_${TEST_LANGUAGE}_${TEST_SHARE}" $TEST_PATH $FEATURES_LOCATION
+zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/prosody_ps_wn003" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}
-cp -r $OUTPUT_LOCATION/scores/swuggy_${TEST_LANGUAGE}_${TEST_SHARE} $CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}
+mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/prosody_ps_wn003
+cp -r $OUTPUT_LOCATION/scores/prosody_ps_wn003 $CHECKPOINT_LOCATION/$MODEL/scores
