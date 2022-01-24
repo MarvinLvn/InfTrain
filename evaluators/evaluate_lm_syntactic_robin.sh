@@ -70,7 +70,7 @@ function die() {
 [ $# -lt 2 ] && usage
 
 # paths
-MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
+MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models/big}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
 ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
 
@@ -156,9 +156,6 @@ else
 fi;
 
 MODEL_TYPE=${MODEL/_small/}
-MODEL_TYPE=${MODEL/_sbm_none/}
-MODEL_TYPE=${MODEL/_sbm_complete/}
-MODEL_TYPE=${MODEL/_sbm_eos/}
 MODEL_TYPE=${MODEL^^}
 for item in ${KIND[*]}
 do

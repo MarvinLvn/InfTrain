@@ -88,6 +88,13 @@ TEST_PATH="${TEST_PATH:-/gpfsscratch/rech/cfs/commun/swuggy_hadrien/lexical/${TE
 FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
 
+output_file=$CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}/swuggy_${TEST_LANGUAGE}_${TEST_SHARE}/score_lexical_dev_by_pair.csv
+if [ -f $output_file ]; then
+  echo "$output_file found. Not running anything."
+  exit
+fi;
+
+
 if [ -d "${CHECKPOINT_LOCATION}/cpc_small" ]; then
   CPC="cpc_small"
 elif [ -d "${CHECKPOINT_LOCATION}/cpc_big" ]; then
@@ -151,6 +158,9 @@ done
 
 # -- Compute pseudo-probabilities (bert or lstm) depending on the model
 MODEL_TYPE=${MODEL/_small/}
+MODEL_TYPE=${MODEL/_sbm_none/}
+MODEL_TYPE=${MODEL/_sbm_complete/}
+MODEL_TYPE=${MODEL/_sbm_eos/}
 MODEL_TYPE=${MODEL^^}
 for item in ${KIND[*]}
 do
@@ -192,5 +202,5 @@ fi;
 zerospeech2021-evaluate --no-phonetic --no-syntactic --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/swuggy_${TEST_LANGUAGE}_${TEST_SHARE}" $TEST_PATH $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}/${TEST_SHARE}
+mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}
 cp -r $OUTPUT_LOCATION/scores/swuggy_${TEST_LANGUAGE}_${TEST_SHARE} $CHECKPOINT_LOCATION/$MODEL/scores/swuggy/${TEST_LANGUAGE}

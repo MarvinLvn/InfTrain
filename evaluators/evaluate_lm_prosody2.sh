@@ -70,9 +70,9 @@ function die() {
 [ $# -lt 2 ] && usage
 
 # paths
-MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models}"
+MODEL_LOCATION="${MODEL_LOCATION:-/gpfsscratch/rech/cfs/commun/InfTrain_models/big}"
 FAMILIES_LOCATION="${FAMILIES_LOCATION:-/gpfsscratch/rech/cfs/commun/families}"
-ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/zerospeech2021_dataset}"
+ZEROSPEECH_DATASET="${ZEROSPEECH_DATASET:-/gpfsscratch/rech/cfs/commun/prosodic_evaluation_wn003/prosodic_ps}"
 
 BASELINE_SCRIPTS="${BASELINE_SCRIPTS:-utils}"
 FILE_EXT="${FILE_EXTENSION:-wav}"
@@ -201,8 +201,8 @@ if [[ ${KIND[*]} =~ (^|[[:space:]])"test"($|[[:space:]]) ]] ; then
   export ZEROSPEECH2021_TEST_GOLD=$ZEROSPEECH_DATASET
 fi;
 
-zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/sblimp" $ZEROSPEECH_DATASET $FEATURES_LOCATION
+zerospeech2021-evaluate --no-phonetic --no-lexical --no-semantic --njobs $NB_JOBS -o "$OUTPUT_LOCATION/scores/prosody_ps_wn003" $ZEROSPEECH_DATASET $FEATURES_LOCATION
 
 # copy the score on $SCRATCH
-mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/sblimp
-cp -r $OUTPUT_LOCATION/scores/sblimp $CHECKPOINT_LOCATION/$MODEL/scores
+mkdir -p $CHECKPOINT_LOCATION/$MODEL/scores/prosody_ps_wn003
+cp -r $OUTPUT_LOCATION/scores/prosody_ps_wn003 $CHECKPOINT_LOCATION/$MODEL/scores
