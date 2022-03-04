@@ -11,7 +11,7 @@ def compute_proba_BERT_mlm_span(
                             batchsen_size=32, inner_batch_size = 128,
                             gpu=False, print_tokens=False, verbose=False,
                             print_shape_statistics=False,
-                            save_to=None, file_names=None):
+                            save_to=None, file_names=None, aggregator='sum'):
     """
     Compute the pseudo log-proba of a list of sentences with span-masked-language-model-scoring style as
     described in the baseline system of The Zero Resource Speech Benchmark 2021 (see paper for the formula).
@@ -56,12 +56,12 @@ def compute_proba_BERT_mlm_span(
         The pseudo log-probabilities of the input sentences.
 
     """
-    def compute_proba_batchsen(sentences):
+    def compute_proba_batchsen(sentences, aggregator='sum'):
+        assert aggregator in ['mean', 'sum']
         # Compute the id of the mask
-        masked_token =  '<mask>'
+        masked_token = '<mask>'
         masked_idx = roberta.task.source_dictionary.indices[masked_token]
         pad_idx = roberta.task.source_dictionary.pad()
-
         # Compute the input sequences of tokens
         masked_sentence_tokens_list = []
         sequences_list = []         # to retrieve the sentences when computing logproba
@@ -87,7 +87,7 @@ def compute_proba_BERT_mlm_span(
             if span_overlap:
                 step_size = temporal_sliding_size
             else:
-                step_size  = max(actual_span_size,1)
+                step_size = max(actual_span_size,1)
 
             # Start masking out tokens
             for idx in range(0, ln-actual_span_size+1, step_size):
@@ -150,17 +150,21 @@ def compute_proba_BERT_mlm_span(
             if span_overlap:
                 step_size = temporal_sliding_size
             else:
-                step_size  = max(actual_span_size,1)
+                step_size = max(actual_span_size,1)
 
             logproba = 0.
+            n_scores = 0
             for idx in range(0, ln-actual_span_size+1, step_size):
                 score = 0.
                 for idx_masked in range(idx+1, idx+1+actual_span_size):
                     score += outputs_list[i][idx_masked].softmax(0)[sentence_tokens[idx_masked]].log()
+                    n_scores += 1
                 if verbose:
                     print(score)
                 logproba += score
                 i += 1
+            if aggregator == 'mean':
+                logproba /= n_scores
 
             if logproba != 0.:
                 logproba_list.append(logproba.data.item())
@@ -199,7 +203,7 @@ def compute_proba_BERT_mlm_span(
             for i in range(n_batch):
                 sequences_batch = sequences[i*batchsen_size : min((i+1)*batchsen_size, len(sequences))]
                 with torch.no_grad():
-                    logproba_batch, shape_statistics = compute_proba_batchsen(sequences_batch)
+                    logproba_batch, shape_statistics = compute_proba_batchsen(sequences_batch, aggregator)
                 logproba_all.extend(logproba_batch)
 
                 if save_to is not None:
@@ -228,7 +232,7 @@ def compute_proba_BERT_mlm_span(
             print("\nDone all in {:4f} s.".format(time() - start_time))
         else:
             start_time = time()
-            logproba_all, shape_statistics = compute_proba_batchsen(sequences)
+            logproba_all, shape_statistics = compute_proba_batchsen(sequences, aggregator)
 
             if save_to is not None:
                 outLines = []
@@ -265,7 +269,7 @@ def compute_proba_LSTM(
         sequences, model, task, 
         batch_size = 128, gpu = True,
         verbose=False, print_tokens=False,
-        save_to=None, file_names=None):
+        save_to=None, file_names=None, aggregator='sum'):
     """
     Compute the pseudo log-proba of a list of sentences from a LSTM language model estimated with the chain rule.
     P(abcd)=P(a)P(b|a)P(c|ab)P(d|abc)
@@ -299,6 +303,7 @@ def compute_proba_LSTM(
         The pseudo log-probabilities of the input sentences.
 
     """
+    assert aggregator in ['sum', 'mean']
     try:  # In case of any errors, release GPU memory
         if gpu:
             model = model.cuda()
@@ -347,6 +352,8 @@ def compute_proba_LSTM(
                         print("Log proba score for '"+" ".join(sequence[1:-1])+"' :", logproba)
                     else:
                         print("Log proba score for '"+sequence[1:-1]+"' :", logproba)
+                if aggregator == 'mean':
+                    logproba /= len(sequences_inputs[j][1:])
                 logproba_list.append(logproba.data.item())
                 
             return logproba_list
