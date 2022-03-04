@@ -25,6 +25,8 @@ def parseArgs(argv):
                         help="Run on a cpu machine.")
     parser.add_argument('--resume', action='store_true',
                         help="Continue to compute score if the output file already exists.")
+    parser.add_argument('--pooling', type=str, default='sum',
+                        help="Type of pooling done on the features to calculate the pseudo log-proba. 'sum' or 'mean'.")
     return parser.parse_args(argv)
 
 def main(argv):
@@ -100,7 +102,7 @@ def main(argv):
                         intput_file_seqs, model, task, 
                         batch_size = args.batchSize, gpu = not args.cpu,
                         verbose=False, print_tokens=False,
-                        save_to=args.pathOutputFile, file_names=input_file_names)
+                        save_to=args.pathOutputFile, file_names=input_file_names, aggregator=args.pooling)
 
 if __name__ == "__main__":
     args = sys.argv[1:]
