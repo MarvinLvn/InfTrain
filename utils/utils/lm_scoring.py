@@ -170,7 +170,6 @@ def compute_proba_BERT_mlm_span(
                 logproba_list.append(logproba.data.item())
             else:
                 logproba_list.append(0.)
-
         return logproba_list, shape_statistics
 
     try:  # In case of any errors, release GPU memory (useful for notebooks)
@@ -210,7 +209,7 @@ def compute_proba_BERT_mlm_span(
                     file_names_batch = file_names[i*batchsen_size : min((i+1)*batchsen_size, len(sequences))]
                     outLines = []
                     for fname, score in zip(file_names_batch, logproba_batch):
-                        outLines.append(" ".join([fname, str(score)]))
+                        outLines.append(" ".join([str(fname), str(score)]))
                     outLines = "\n".join(outLines)
                     with open(save_to, 'a') as f:
                         if addEndLine:
@@ -237,7 +236,7 @@ def compute_proba_BERT_mlm_span(
             if save_to is not None:
                 outLines = []
                 for fname, score in zip(file_names, logproba_all):
-                    outLines.append(" ".join([fname, str(score)]))
+                    outLines.append(" ".join([str(fname), str(score)]))
                 outLines = "\n".join(outLines)
                 with open(save_to, 'a') as f:
                     if addEndLine:
@@ -263,7 +262,7 @@ def compute_proba_BERT_mlm_span(
 
         raise
 
-    return logproba_all
+    return logproba_all, score_list_per_sequence_all
 
 def compute_proba_LSTM(
         sequences, model, task, 
@@ -307,7 +306,7 @@ def compute_proba_LSTM(
     try:  # In case of any errors, release GPU memory
         if gpu:
             model = model.cuda()
-        
+
         def compute_proba_batch(sequences):
             pad_idx = task.source_dictionary.pad()
 
@@ -317,7 +316,6 @@ def compute_proba_LSTM(
             for sequence in sequences:
                 # Convert from string to list of units
                 sentence_tokens = task.source_dictionary.encode_line("<s> " + sequence, append_eos=True, add_if_not_exist=False).long()
-
                 if print_tokens:
                     print("|".join([task.source_dictionary.symbols[tok] for tok in sentence_tokens]))
 
@@ -336,8 +334,10 @@ def compute_proba_LSTM(
 
             # Compute scores
             logproba_list = []
+            score_list_per_sequence = []
             for j, sequence in enumerate(sequences):
                 logproba=0.
+                score_list = []
                 if verbose:
                     sequence = ["BOS"] + tokenize(sequence) + ["EOS"]
                 for i, ch_idx in enumerate(sequences_inputs[j][1:]):
@@ -345,6 +345,7 @@ def compute_proba_LSTM(
                     if verbose:
                         print(sequence[:i+1], sequence[i+1], score)
                     logproba += score
+                    score_list.append(score.item())
                     if i == input_lengths[j] - 2:
                         break
                 if verbose:
@@ -353,10 +354,11 @@ def compute_proba_LSTM(
                     else:
                         print("Log proba score for '"+sequence[1:-1]+"' :", logproba)
                 if aggregator == 'mean':
-                    logproba /= len(sequences_inputs[j][1:])
+                    logproba /= (input_lengths[j]-1)
                 logproba_list.append(logproba.data.item())
+                score_list_per_sequence.append(score_list)
                 
-            return logproba_list
+            return logproba_list, score_list_per_sequence
         
         if save_to is not None:
             assert file_names is not None and len(file_names) == len(sequences), \
@@ -371,6 +373,7 @@ def compute_proba_LSTM(
         print("Number of sequences: {}".format(len(sequences)))
         if batch_size > 0:
             logproba_all = []
+            score_list_per_sequence_all = []
             n_batch = len(sequences)//batch_size
             if len(sequences) % batch_size != 0:
                 n_batch += 1
@@ -378,13 +381,13 @@ def compute_proba_LSTM(
             start_time = time()
             for i in range(n_batch):
                 sequences_batch = sequences[i*batch_size : min((i+1)*batch_size, len(sequences))]
-                logproba_batch = compute_proba_batch(sequences_batch)
+                logproba_batch, score_list_per_sequence = compute_proba_batch(sequences_batch)
 
                 if save_to is not None:
                     file_names_batch = file_names[i*batch_size : min((i+1)*batch_size, len(sequences))]
                     outLines = []
-                    for fname, score in zip(file_names_batch, logproba_batch):
-                        outLines.append(" ".join([fname, str(score)]))
+                    for fname, score, score_list in zip(file_names_batch, logproba_batch, score_list_per_sequence):
+                        outLines.append(" ".join([str(fname), str(score), str(score_list)]))
                     outLines = "\n".join(outLines)
                     with open(save_to, 'a') as f:
                         if addEndLine:
@@ -394,6 +397,8 @@ def compute_proba_LSTM(
                             addEndLine = True
 
                 logproba_all.extend(logproba_batch)
+                score_list_per_sequence_all.extend(score_list_per_sequence)
+
                 print("Batch {:d}/{:d}. Done in {:4f} s.\t\t\t".format(
                                                                     i+1, n_batch,
                                                                     time() - start_time), end = "\r")
@@ -401,12 +406,12 @@ def compute_proba_LSTM(
             print("\nDone all in {:4f} s.".format(time() - start_time))
         else:
             start_time = time()
-            logproba_all = compute_proba_batch(sequences)
+            logproba_all, score_list_per_sequence_all = compute_proba_batch(sequences)
 
             if save_to is not None:
                 outLines = []
-                for fname, score in zip(file_names, logproba_all):
-                    outLines.append(" ".join([fname, str(score)]))
+                for fname, score, score_list in zip(file_names, logproba_all, score_list_per_sequence_all):
+                    outLines.append(" ".join([str(fname), str(score), str(score_list)]))
                 outLines = "\n".join(outLines)
                 with open(save_to, 'a') as f:
                     if addEndLine:
@@ -430,4 +435,4 @@ def compute_proba_LSTM(
         
         raise
     
-    return logproba_all
+    return logproba_all, score_list_per_sequence_all
