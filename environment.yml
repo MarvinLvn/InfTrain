@@ -25,7 +25,5 @@ dependencies:
   - pandas=1.2.4
   - pip:
       - progressbar2
-      - "git+https://github.com/fairinternal/CPC_torch.git"
-      - --editable=git+https://github.com/fairinternal/speech_augment.git@9f0564344740120f5b3687c24d5e009674d51aac#egg=augment
       - sox
       - "git+https://github.com/bootphon/zerospeech2021.git"

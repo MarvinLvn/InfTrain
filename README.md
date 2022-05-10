@@ -48,7 +48,9 @@ conda env create -f environment.yml && conda activate inftrain
 git clone https://github.com/MarvinLvn/CPC_torch.git
 git clone https://github.com/bootphon/zerospeech2021_baseline
 
-git clone https://github.com/facebookresearch/WavAugment && cd WavAugment && python setup.py develop
+git clone https://github.com/facebookresearch/WavAugment && cd WavAugment
+git checkout 357b2f9f09832cbe64ff76633eea8dbd5f1e97d1
+pip install -e .
 ```
 
 To train models, you must install the following dependencies : 
