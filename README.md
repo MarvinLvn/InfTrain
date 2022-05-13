@@ -46,6 +46,9 @@ The `experiments` folder contain scripts to generate the different experiments (
 module load sox
 conda env create -f environment.yml && conda activate inftrain
 git clone https://github.com/MarvinLvn/CPC_torch.git
+cd CPC_torch
+pip install -e .
+cd ..
 git clone https://github.com/bootphon/zerospeech2021_baseline
 
 git clone https://github.com/facebookresearch/WavAugment && cd WavAugment
