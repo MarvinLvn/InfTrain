@@ -1,3 +1,8 @@
+"""
+This script computes CPC loss and accuracy on any dataset.
+Example call:
+python utils/validate_CPC.py --pathModel /checkpoint/marvinlvn/InfTrain/InfTrain_models/EN/3200h/00/cpc_small/checkpoint_25.pt --pathDB /private/home/marvinlvn/DATA/CPC_data/test/ABX_CV/en --file_extension .wav --pathOut /checkpoint/marvinlvn/InfTrain/InfTrain_models/EN/3200h/00/cpc_small/CommonVoiceLoss/EN/25/loss.json
+"""
 import argparse
 import json
 import os
