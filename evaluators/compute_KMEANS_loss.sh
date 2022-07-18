@@ -79,7 +79,6 @@ shift
 
 FAMILY_ID="${PATH_TO_FAMILY#${FAMILIES_LOCATION}}"
 CHECKPOINT_LOCATION="${MODEL_LOCATION}${FAMILY_ID}"
-CPC_CHECKPOINT_FILE=""
 OUTPUT_LOCATION="${CHECKPOINT_LOCATION}"
 
 # Find best epoch checkpoint to use for evaluation
@@ -105,14 +104,14 @@ if [[ $DRY_RUN == "true" ]]; then
   echo "model-location: $MODEL_LOCATION"
   echo "families-location: $FAMILIES_LOCATION"
   echo "scripts: (loss;$LOSS_PY) (epoch;$BEST_EPOCH_PY)"
-  echo "checkpoint-file: $CPC_CHECKPOINT_FILE"
+  echo "checkpoint-file: $CHECKPOINT_FILE"
   echo "output-location: $OUTPUT_LOCATION"
   echo "file-extension: $FILE_EXT"
   echo "nb-jobs: $NB_JOBS"
   echo "python $(which python)"
   for lang in fr en; do
     PATH_OUT="$OUTPUT_LOCATION/${lang}/${BEST_EPOCH}/loss.json"
-    echo "==> python $LOSS_PY --pathModel $CPC_CHECKPOINT_FILE --pathOut $PATH_OUT --pathDB $ZEROSPEECH_DATASET/${lang} --file_extension $FILE_EXT"
+    echo "==> python $LOSS_PY --pathModel $CHECKPOINT_FILE --pathOut $PATH_OUT --pathDB $ZEROSPEECH_DATASET/${lang} --file_extension $FILE_EXT"
   done;
   exit 0
 fi
@@ -121,5 +120,5 @@ for lang in fr en; do
   LANG_DATASET="${ZEROSPEECH_DATASET}/${lang}"
   PATH_OUT="$OUTPUT_LOCATION/${lang}/${BEST_EPOCH}/loss.json"
   mkdir -p "$(dirname PATH_OUT)"
-  srun python $LOSS_PY --pathModel $CPC_CHECKPOINT_FILE --pathOut $PATH_OUT --pathDB $LANG_DATASET --file_extension $FILE_EXT
+  srun python $LOSS_PY --pathModel $CHECKPOINT_FILE --pathOut $PATH_OUT --pathDB $LANG_DATASET --file_extension $FILE_EXT
 done

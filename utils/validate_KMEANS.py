@@ -2,28 +2,16 @@
 This script computes CPC loss and accuracy on any dataset.
 Example call:
 python utils/validate_KMEANS.py \
-    --pathKMEANS /checkpoint/marvinlvn/InfTrain/InfTrain_models/EN/3200h/00/kmeans/checkpoint_last.pt \
-    --pathCPC /checkpoint/marvinlvn/InfTrain/InfTrain_models/EN/3200h/00/kmeans/checkpoint_last.pt \
+    --pathModel /checkpoint/marvinlvn/InfTrain/InfTrain_models/EN/3200h/00/kmeans/checkpoint_last.pt \
     --pathDB/private/home/marvinlvn/DATA/CPC_data/test/ABX_CV/en --file_extension .wav \
     --pathOut /checkpoint/marvinlvn/InfTrain/InfTrain_models/EN/3200h/00/cpc_small/CommonVoiceLoss/EN/25/loss.json
 """
-import os
-import sys
-import json
-import argparse
-import progressbar
 from pathlib import Path
-from random import shuffle
-from time import time
-import torch
-from cpc.dataset import findAllSeqs, AudioBatchData
 from cpc.feature_loader import (
-    buildFeature,
     FeatureModule,
     loadModel,
 )
-from cpc.clustering.clustering import loadClusterModule, kMeanClusterStep
-from tqdm import tqdm
+from cpc.clustering.clustering import loadClusterModule
 from utils.utils_functions import readArgs
 import argparse
 import json
@@ -31,11 +19,7 @@ import os
 import sys
 
 import cpc.criterion as cr
-import cpc.feature_loader as fl
-import cpc.utils.misc as utils
-import numpy as np
 import torch
-from cpc.cpc_default_config import set_default_cpc_config
 from cpc.criterion.research import CPCBertCriterion
 from cpc.dataset import AudioBatchData, findAllSeqs
 from tqdm import tqdm
@@ -62,7 +46,7 @@ def valStep(
     scores = torch.zeros(k).cuda()
     n_items = torch.zeros(k).cuda()
     with torch.no_grad():
-        for index, data in enumerate(dataLoader):
+        for index, data in tqdm(enumerate(dataLoader)):
             cFeatures = featureMaker(data).contiguous().view(-1, 1, D)
             qFeatures = clusterModule(cFeatures)
             assigned_clusters = torch.argmin(qFeatures, dim=-1).view(-1)

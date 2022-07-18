@@ -1,10 +1,15 @@
-from pathlib import Path
-from os.path import exists, join, basename, dirname, abspath
-import sys
 import argparse
+import json
+import os
+import sys
+from os.path import exists, join, dirname, abspath
+from pathlib import Path
 
-from utils.utils_functions import loadLSTMLMCheckpoint
+import numpy as np
+
 from utils.lm_scoring import compute_proba_LSTM
+from utils.utils_functions import loadLSTMLMCheckpoint
+
 
 def parseArgs(argv):
     # Run parameters
@@ -27,11 +32,22 @@ def parseArgs(argv):
                         help="Continue to compute score if the output file already exists.")
     parser.add_argument('--pooling', type=str, default='sum',
                         help="Type of pooling done on the features to calculate the pseudo log-proba. 'sum' or 'mean'.")
+    parser.add_argument('--get_loss', action='store_true',
+                        help="If True, will only return the overall loss on the dataset and will not saved"
+                             "pseudo-probabilities. In which case, pathOutputFile should be a .json.")
+    parser.add_argument('--debug', action='store_true',
+                        help="If True, will only process 10 sequences.")
     return parser.parse_args(argv)
 
 def main(argv):
     # Args parser
     args = parseArgs(argv)
+
+    if args.get_loss:
+        args.pooling = 'mean'
+        print("--get_loss is activated. loss will be averaged!")
+        if args.pathOutputFile[-5:] != '.json':
+            raise ValueError("When --get_loss mode is activated, pathOutputFile must end with .json")
 
     # Convert to absolute paths to get rid of exceptions
     args.pathQuantizedUnits = abspath(args.pathQuantizedUnits)
@@ -44,7 +60,7 @@ def main(argv):
     print("")
     print(f"Reading input file from {args.pathQuantizedUnits}")
     input_file_names = []
-    intput_file_seqs = []
+    input_file_seqs = []
     with open(args.pathQuantizedUnits, 'r') as f:
         for line in f:
             file_name, file_seq = line.strip().split("\t")
@@ -52,7 +68,11 @@ def main(argv):
             file_seq = file_seq.replace(",", " ")
             # Add to lists
             input_file_names.append(file_name)
-            intput_file_seqs.append(file_seq)
+            input_file_seqs.append(file_seq)
+            
+    if args.debug:
+        input_file_names = input_file_names[:10]
+        input_file_seqs = input_file_seqs[:10]
     print(f"Found {len(input_file_names)} sequences!")
 
     # Check if directory exists
@@ -70,13 +90,14 @@ def main(argv):
             with open(args.pathOutputFile, 'r') as f:
                 lines = [line for line in f]
             for line in lines:
-                file_name, score = line.strip().split()
+                splitted = line.strip().split()
+                file_name, score = splitted[0], splitted[1]
                 existing_file_names.append(file_name)
             assert input_file_names[:len(existing_file_names)] == existing_file_names, \
                 "The file names in the existing output file do not match the input file!!"
             input_file_names = input_file_names[len(existing_file_names):]
-            intput_file_seqs = intput_file_seqs[len(existing_file_names):]
-            print(f"Found existing output file, continue to compute scores of {len(intput_file_seqs)} sequences left!")
+            input_file_seqs = input_file_seqs[len(existing_file_names):]
+            print(f"Found existing output file, continue to compute scores of {len(input_file_seqs)} sequences left!")
     else:
         assert not exists(args.pathOutputFile), \
             f"Output file {args.pathOutputFile} already exists !!! If you want to continue computing scores, please check the --resume option."
@@ -98,11 +119,24 @@ def main(argv):
     # Run and save outputs
     print("")
     print(f"Computing log-probabilities and saving results to {args.pathOutputFile}...")
-    _ = compute_proba_LSTM(
-                        intput_file_seqs, model, task, 
-                        batch_size = args.batchSize, gpu = not args.cpu,
-                        verbose=False, print_tokens=False,
-                        save_to=args.pathOutputFile, file_names=input_file_names, aggregator=args.pooling)
+    if not args.get_loss:
+        _ = compute_proba_LSTM(
+                            input_file_seqs, model, task,
+                            batch_size=args.batchSize, gpu=not args.cpu,
+                            verbose=False, print_tokens=False,
+                            save_to=args.pathOutputFile, file_names=input_file_names, aggregator=args.pooling)
+    else:
+        logproba_all, score_list_per_sequence_all = compute_proba_LSTM(
+            input_file_seqs, model, task,
+            batch_size=args.batchSize, gpu=not args.cpu,
+            verbose=False, print_tokens=False,
+            save_to=None, file_names=input_file_names, aggregator=args.pooling)
+
+        scores = {'loss': -np.mean(np.concatenate(score_list_per_sequence_all))}
+
+        os.makedirs(os.path.dirname(args.pathOutputFile), exist_ok=True)
+        with open(args.pathOutputFile, 'w') as fout:
+            json.dump(scores, fout, indent=2)
 
 if __name__ == "__main__":
     args = sys.argv[1:]
