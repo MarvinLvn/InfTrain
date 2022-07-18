@@ -7,14 +7,12 @@ import argparse
 import json
 import os
 import sys
-import time
 
 import cpc.criterion as cr
 import cpc.feature_loader as fl
 import cpc.utils.misc as utils
 import numpy as np
 import torch
-from cpc.clustering.clustering import buildNewPhoneDict
 from cpc.cpc_default_config import set_default_cpc_config
 from cpc.criterion.research import CPCBertCriterion
 from cpc.dataset import AudioBatchData, findAllSeqs
@@ -135,15 +133,6 @@ def parseArgs(argv):
     group_db.add_argument('--max_size_loaded', type=int, default=4000000000,
                           help='Maximal amount of data (in byte) a dataset '
                           'can hold in memory at any given time')
-
-    group_save = parser.add_argument_group('Save')
-    group_save.add_argument('--pathCheckpoint', type=str, default=None,
-                            help="Path of the output directory.")
-    group_save.add_argument('--logging_step', type=int, default=1000)
-    group_save.add_argument('--save_step', type=int, default=5,
-                            help="Frequency (in epochs) at which a checkpoint "
-                            "should be saved")
-
     group_gpu = parser.add_argument_group('GPUs')
     group_gpu.add_argument('--nGPU', type=int, default=-1,
                            help="Number of GPU to use (default: use all "
